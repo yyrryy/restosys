@@ -1,0 +1,36 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Cashier Dashboard | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Cashier station</p>
+            <h1>Payments and receipts</h1>
+        </div>
+        <!-- <a class="button-link" href="{% url 'restaurant:pos_dashboard' %}">Open POS</a> -->
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Ready to pay</h2>
+        </div>
+        {% include 'restaurant/partials/order_table.html' with orders=payable_orders cashier_actions=True next_url=request.path %}
+    </section>
+
+    <section class="panel spacing-top">
+        <div class="panel-heading">
+            <h2>Recent paid orders</h2>
+        </div>
+        {% include 'restaurant/partials/order_table.html' with orders=paid_orders %}
+    </section>
+{% endblock %}

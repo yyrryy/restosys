@@ -1,0 +1,1 @@
+c:\Users\hp\Desktop\projects\suplliersserver\static\admin\js\vendor\jquery\jquery.js

@@ -1,0 +1,38 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Waiter Dashboard | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Waiter station</p>
+            <h1>My table service</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:pos_dashboard' %}">Open POS</a>
+    </header>
+
+    <section class="content-grid">
+        <article class="panel" data-live-waiter-url="{% url 'restaurant:waiter_orders_live' %}">
+            <div class="panel-heading">
+                <h2>Ready alerts</h2>
+                <span class="live-indicator" id="waiter-live-indicator">Live</span>
+            </div>
+            <div id="waiter-ready-feed">
+                {% include 'restaurant/partials/ready_alerts.html' with ready_orders=ready_orders %}
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel-heading"><h2>Next action</h2></div>
+            <p class="empty-state">Use the POS page to place new table orders, then watch this dashboard for ready alerts.</p>
+        </article>
+    </section>
+
+    <section class="panel spacing-top">
+        <div class="panel-heading"><h2>My orders</h2></div>
+        <div id="waiter-orders-feed">
+            {% include 'restaurant/partials/order_table.html' with orders=orders show_actions=True next_url=request.path %}
+        </div>
+    </section>
+    <script src="/static/restaurant/js/waiter-live.js"></script>
+{% endblock %}

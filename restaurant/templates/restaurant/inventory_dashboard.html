@@ -1,0 +1,68 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Inventory | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Stock control</p>
+            <h1>Inventory</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:admin_dashboard' %}">Add Product</a>
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Stock list</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Unit</th>
+                    <th>Reorder level</th>
+                    <th>Status</th>
+                    <th>Used in dishes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory_items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.unit }}</td>
+                        <td>{{ item.reorder_level }}</td>
+                        <td>
+                            {% if item.needs_reorder %}
+                                <span class="status status-low">Low stock</span>
+                            {% else %}
+                                <span class="status status-ready">In stock</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for component in item.recipe_components.all %}
+                                {{ component.menu_item.name }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                Not used yet
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No stock products yet. Add products from the admin dashboard.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

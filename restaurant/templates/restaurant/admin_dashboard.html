@@ -1,0 +1,102 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Admin Dashboard | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Admin workspace</p>
+            <h1>Restaurant setup</h1>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="three-grid">
+        <article class="panel">
+            <div class="panel-heading"><h2>Add table</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="table">
+                {{ forms.table.as_p }}
+                <button type="submit">Save Table</button>
+            </form>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Add dish</h2></div>
+            <form class="stack-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="menu">
+                {{ forms.menu.as_p }}
+                <button type="submit">Save Dish</button>
+            </form>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Add product</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="inventory">
+                {{ forms.inventory.as_p }}
+                <button type="submit">Save Product</button>
+            </form>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Add dish component</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="component">
+                {{ forms.component.as_p }}
+                <button type="submit">Save Component</button>
+            </form>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="panel">
+            <div class="panel-heading"><h2>Menu</h2></div>
+            <table>
+                <thead><tr><th>Dish</th><th>Category</th><th>Price</th><th>Image</th><th>Components</th><th>Available</th></tr></thead>
+                <tbody>
+                    {% for item in menu_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.get_category_display }}</td>
+                            <td>{{ item.price }}</td>
+                            <td><img class="menu-thumb" src="{{ item.display_image }}" alt="{{ item.name }}"></td>
+                            <td>
+                                {% for component in item.components.all %}
+                                    {{ component.quantity }} {{ component.inventory_item.unit }} {{ component.inventory_item.name }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    No recipe yet
+                                {% endfor %}
+                            </td>
+                            <td>{{ item.is_available|yesno:"Yes,No" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6">No dishes yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Tables</h2></div>
+            <table>
+                <thead><tr><th>Name</th><th>Seats</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for table in tables %}
+                        <tr><td>{{ table.name }}</td><td>{{ table.seats }}</td><td>{{ table.get_status_display }}</td></tr>
+                    {% empty %}
+                        <tr><td colspan="3">No tables yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+    </section>
+{% endblock %}

@@ -1,0 +1,7 @@
+<ul class="alerts">
+    {% for order in ready_orders %}
+        <li>Order #{{ order.id }} for {{ order.table }} is ready.</li>
+    {% empty %}
+        <li>No ready orders right now.</li>
+    {% endfor %}
+</ul>

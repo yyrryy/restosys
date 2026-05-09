@@ -1,0 +1,26 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login | RestoSys</title>
+    <link rel="stylesheet" href="{% static 'restaurant/css/dashboard.css' %}">
+</head>
+<body class="auth-body">
+    <main class="auth-panel">
+        <div class="brand auth-brand">
+            <span class="brand-mark">R</span>
+            <div>
+                <strong>RestoSys</strong>
+                <small>Restaurant Management</small>
+            </div>
+        </div>
+        <form class="stack-form" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Login</button>
+        </form>
+    </main>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}RestoSys{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'restaurant/css/dashboard.css' %}">
+</head>
+<body>
+    <button class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="app-sidebar">
+        <span class="sidebar-toggle-icon">‹</span>
+        <span class="sr-only">Toggle sidebar</span>
+    </button>
+    <aside class="sidebar" id="app-sidebar">
+        <div class="brand">
+            <span class="brand-mark">R</span>
+            <div>
+                <strong>RestoSys</strong>
+                <small>{{ role|default:"Restaurant" }}</small>
+            </div>
+        </div>
+        <nav class="nav">
+            <a class="{% if active == 'owner' %}active{% endif %}" href="{% url 'restaurant:owner_dashboard' %}">Owner</a>
+            <a class="{% if active == 'admin' %}active{% endif %}" href="{% url 'restaurant:admin_dashboard' %}">Admin</a>
+            <a class="{% if active == 'inventory' %}active{% endif %}" href="{% url 'restaurant:inventory_dashboard' %}">Inventory</a>
+            {% if role == 'Owner' or role == 'Waiter' or role == 'Cashier' or active == 'pos' %}
+                <a class="{% if active == 'pos' %}active{% endif %}" href="{% url 'restaurant:pos_dashboard' %}">POS</a>
+            {% endif %}
+            <a class="{% if active == 'waiter' %}active{% endif %}" href="{% url 'restaurant:waiter_dashboard' %}">Waiter</a>
+            <a class="{% if active == 'kitchen' %}active{% endif %}" href="{% url 'restaurant:kitchen_dashboard' %}">Kitchen</a>
+            <a class="{% if active == 'cashier' %}active{% endif %}" href="{% url 'restaurant:cashier_dashboard' %}">Cashier</a>
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button class="nav-button" type="submit">Logout</button>
+                </form>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <main class="workspace">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <p class="message {{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{% static 'restaurant/js/jquery.js' %}"></script>
+    <script src="{% static 'restaurant/js/functions.js' %}"></script>
+</body>
+</html>

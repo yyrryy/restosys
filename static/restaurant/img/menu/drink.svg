@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#cffafe"/>
+      <stop offset="1" stop-color="#bbf7d0"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="480" fill="url(#bg)"/>
+  <path d="M244 138h152l-24 246H268Z" fill="#ffffff" opacity=".92"/>
+  <path d="M270 230h100l-14 126h-72Z" fill="#06b6d4"/>
+  <path d="M302 138l64-62" fill="none" stroke="#0f766e" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="336" cy="262" r="18" fill="#fef08a"/>
+  <circle cx="306" cy="316" r="16" fill="#fef08a"/>
+  <text x="320" y="430" text-anchor="middle" font-family="Arial" font-size="44" font-weight="700" fill="#1f2933">Drink</text>
+</svg>

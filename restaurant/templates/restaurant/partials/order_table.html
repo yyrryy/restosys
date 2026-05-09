@@ -1,0 +1,68 @@
+<table>
+    <thead>
+        <tr>
+            <th>Order</th>
+            <th>Table</th>
+            <th>Items</th>
+            <th>Status</th>
+            <th>Total</th>
+            {% if kitchen_actions or show_actions or cashier_actions %}<th>Action</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+            <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.table|default:"Takeaway" }}</td>
+                <td>
+                    {% for item in order.items.all %}
+                        {{ item.quantity }} x {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+                <td><span class="status status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                <td>{{ order.total }}</td>
+                {% if kitchen_actions %}
+                    <td class="action-cell">
+                        {% if order.status == 'queued' %}
+                            <form method="post" action="{% url 'restaurant:update_order_status' order.id 'preparing' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next_url }}">
+                                <button type="submit">Start</button>
+                            </form>
+                        {% endif %}
+                        <form method="post" action="{% url 'restaurant:update_order_status' order.id 'ready' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ next_url }}">
+                            <button type="submit">Ready</button>
+                        </form>
+                    </td>
+                {% elif cashier_actions %}
+                    <td class="action-cell">
+                        <button onclick="getorderdetails({{order.id}})">details</button>
+                        <form method="post" action="{% url 'restaurant:update_order_status' order.id 'paid' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ next_url }}">
+                            <button type="submit">Mark Paid</button>
+                        </form>
+                    </td>
+                {% elif show_actions %}
+                    <td class="action-cell">
+                        {% if order.status == 'ready' %}
+                            <form method="post" action="{% url 'restaurant:update_order_status' order.id 'served' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next_url }}">
+                                <button type="submit">Served</button>
+                            </form>
+                        {% else %}
+                            Waiting
+                        {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6">No orders to show.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

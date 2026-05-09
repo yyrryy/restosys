@@ -1,0 +1,87 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Owner Dashboard | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Owner overview</p>
+            <h1>Business performance</h1>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="feature-grid">
+        <a class="feature-link" href="{% url 'restaurant:admin_dashboard' %}">
+            <strong>Admin setup</strong>
+            <span>Add dishes, products, and tables.</span>
+        </a>
+        <a class="feature-link" href="{% url 'restaurant:inventory_dashboard' %}">
+            <strong>Inventory</strong>
+            <span>Review stock levels and low-stock products.</span>
+        </a>
+        <a class="feature-link" href="{% url 'restaurant:waiter_dashboard' %}">
+            <strong>Waiter POS</strong>
+            <span>Place table orders and track ready dishes.</span>
+        </a>
+        <a class="feature-link" href="{% url 'restaurant:pos_dashboard' %}">
+            <strong>POS page</strong>
+            <span>Open the dedicated order-entry screen.</span>
+        </a>
+        <a class="feature-link" href="{% url 'restaurant:kitchen_dashboard' %}">
+            <strong>Kitchen queue</strong>
+            <span>Prepare orders and mark them ready.</span>
+        </a>
+        <a class="feature-link" href="{% url 'restaurant:cashier_dashboard' %}">
+            <strong>Cashier desk</strong>
+            <span>Collect payments and close tables.</span>
+        </a>
+    </section>
+
+    <section class="content-grid">
+        <article class="panel">
+            <div class="panel-heading">
+                <h2>Orders by status</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Orders</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in orders_by_status %}
+                        <tr>
+                            <td>{{ row.status|title }}</td>
+                            <td>{{ row.total }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="2">No orders yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+
+        <article class="panel">
+            <div class="panel-heading">
+                <h2>Low inventory</h2>
+            </div>
+            <ul class="alerts">
+                {% for item in low_inventory %}
+                    <li>{{ item.name }}: {{ item.quantity }} {{ item.unit }}</li>
+                {% empty %}
+                    <li>All inventory is above reorder level.</li>
+                {% endfor %}
+            </ul>
+        </article>
+    </section>
+{% endblock %}
