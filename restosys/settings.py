@@ -72,11 +72,13 @@ WSGI_APPLICATION = 'restosys.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 USE_SQLITE = os.getenv('DEBUG') == 'True' or os.getenv('HOME') == '/home/aaliali'
-usesqlite = USE_SQLITE
 # SQLite mode is treated as local/dev mode (runserver). Non-sqlite is waitress mode.
-DEBUG = True
-print('usesqlite', usesqlite)
-if usesqlite:
+DEBUG = USE_SQLITE
+print('USE_SQLITE', USE_SQLITE)
+if USE_SQLITE:
+    STATICFILES_DIRS = [
+        BASE_DIR / "static",
+    ]
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -84,6 +86,14 @@ if usesqlite:
         }
     }
 else:
+    STATIC_ROOT = BASE_DIR / 'static'
+
+    #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+    STATICFILES_DIRS = [
+        BASE_DIR / "/static",
+    ]
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',

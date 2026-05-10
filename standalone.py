@@ -18,9 +18,9 @@ PORT = 80
 
 
 def runserver():
-    from restosys.settings import usesqlite
+    from restosys.settings import USE_SQLITE
 
-    if usesqlite:
+    if USE_SQLITE:
         os.system(f'python manage.py runserver {HOST}:{PORT}')
     else:
         os.system('python manage.py collectstatic --noinput')
