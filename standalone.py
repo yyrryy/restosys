@@ -1,19 +1,15 @@
 import os
-from threading import Thread
+from socket import socket
 from time import sleep
-import subprocess
-import sys
 def gethostip():
-    if sys.platform.startswith('win'):
-        # Windows
-        result = subprocess.run(['ipconfig'], capture_output=True, text=True)
-        for line in result.stdout.splitlines():
-            if 'IPv4 Address' in line:
-                return line.split(':')[-1].strip()
-    else:
-        # Unix/Linux/Mac
-        result = subprocess.run(['hostname', '-I'], capture_output=True, text=True)
-        return result.stdout.split()[0]
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    finally:
+        ip="localhost"
+        s.close() 
+    return ip
 HOST = gethostip()
 PORT = 80
 def runserver():

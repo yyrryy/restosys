@@ -7,4 +7,5 @@ __pycache__/
 # But keep __init__.py
 !**/migrations/__init__.py
 img/*
+media/*
 push.py
