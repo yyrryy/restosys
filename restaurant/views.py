@@ -548,14 +548,14 @@ def process_scale_scan(user, barcode_input):
         deducted_quantity = round(float(parsed_barcode['price']) / product.price, 3)
         if deducted_quantity <= 0:
             return {'ok': False, 'error': f'Computed quantity is invalid for {product.name}.'}
-        if product.quantity < deducted_quantity:
-            return {
-                'ok': False,
-                'error': (
-                    f'Not enough stock for {product.name}. Need {deducted_quantity} '
-                    f'{product.unit}, have {product.quantity} {product.unit}.'
-                ),
-            }
+        # if product.quantity < deducted_quantity:
+        #     return {
+        #         'ok': False,
+        #         'error': (
+        #             f'Not enough stock for {product.name}. Need {deducted_quantity} '
+        #             f'{product.unit}, have {product.quantity} {product.unit}.'
+        #         ),
+        #     }
         
         previous_quantity = product.quantity
         product.quantity -= deducted_quantity
