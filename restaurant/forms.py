@@ -31,6 +31,11 @@ class MenuItemForm(forms.ModelForm):
 
 
 class InventoryItemForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ['name', 'price', 'quantity', 'unit', 'reorder_level']:
+            self.fields[field_name].required = True
+
     class Meta:
         model = InventoryItem
         fields = ['name', 'plu', 'price', 'quantity', 'unit', 'reorder_level']
