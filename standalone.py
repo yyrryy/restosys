@@ -1,3 +1,4 @@
+from asyncio import sleep
 import os
 import socket
 
@@ -17,11 +18,14 @@ PORT = 80
 
 
 def runserver():
-    os.system(f'python manage.py runserver {HOST}:{PORT}')
+    os.system(f'python -m waitress --listen={HOST}:{PORT} restosys.wsgi:application')
 
 
 if __name__ == '__main__':
     runserver()
+    sleep(2)  # Wait a moment to ensure the server is up
+    # open edge after the server is up
+    os.system(f'start chrome http://{HOST}:{PORT}')
 
 
 # def lunchchrome():
