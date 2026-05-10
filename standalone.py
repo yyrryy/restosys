@@ -1,20 +1,27 @@
 import os
-from socket import socket
-from time import sleep
-def gethostip():
+import socket
+
+
+def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
     finally:
-        ip="localhost"
-        s.close() 
+        s.close()
     return ip
-HOST = gethostip()
+
+
+HOST = get_local_ip()
 PORT = 80
+
+
 def runserver():
     os.system(f'python manage.py runserver {HOST}:{PORT}')
-os.system(f'python manage.py runserver {HOST}:{PORT}')
+
+
+if __name__ == '__main__':
+    runserver()
 
 
 # def lunchchrome():
