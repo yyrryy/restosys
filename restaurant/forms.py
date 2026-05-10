@@ -1,8 +1,9 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
 from django.forms import BaseFormSet, formset_factory
 from django.contrib.auth import get_user_model
 
-from .models import CashDeskEntry, DiningTable, InventoryItem, MenuItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
+from .models import CashDeskEntry, DiningTable, InventoryItem, MenuCategory, MenuItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
 
 
 class DiningTableForm(forms.ModelForm):
@@ -12,6 +13,8 @@ class DiningTableForm(forms.ModelForm):
 
 
 class MenuItemForm(forms.ModelForm):
+    category = forms.ChoiceField(choices=())
+
     class Meta:
         model = MenuItem
         fields = ['name', 'category', 'price', 'image', 'is_available']
@@ -19,11 +22,24 @@ class MenuItemForm(forms.ModelForm):
             'image': 'Image',
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        category_choices = [(category.name, category.name) for category in MenuCategory.objects.all()]
+        self.fields['category'].choices = category_choices
+        if not category_choices:
+            self.fields['category'].help_text = 'Create at least one category first.'
+
 
 class InventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
         fields = ['name', 'plu', 'price', 'quantity', 'unit', 'reorder_level']
+
+
+class MenuCategoryForm(forms.ModelForm):
+    class Meta:
+        model = MenuCategory
+        fields = ['name']
 
 
 class RecipeComponentForm(forms.ModelForm):
@@ -111,6 +127,19 @@ class CashDeskEntryForm(forms.ModelForm):
         if amount <= 0:
             raise forms.ValidationError('Amount must be greater than zero.')
         return amount
+
+
+class AdminUserCreateForm(UserCreationForm):
+    role = forms.ChoiceField(choices=UserProfile.ROLE_CHOICES)
+
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
+        fields = ['username', 'first_name', 'last_name', 'email', 'role', 'password1', 'password2']
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        UserProfile.objects.update_or_create(user=user, defaults={'role': self.cleaned_data['role']})
+        return user
 
 
 class BasePurchaseItemFormSet(BaseFormSet):

@@ -48,21 +48,19 @@ class DiningTable(models.Model):
         return self.name
 
 
+class MenuCategory(models.Model):
+    name = models.CharField(max_length=60, unique=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class MenuItem(models.Model):
-    CATEGORY_STARTER = 'starter'
-    CATEGORY_MAIN = 'main'
-    CATEGORY_DESSERT = 'dessert'
-    CATEGORY_DRINK = 'drink'
-
-    CATEGORY_CHOICES = [
-        (CATEGORY_STARTER, 'Starter'),
-        (CATEGORY_MAIN, 'Main'),
-        (CATEGORY_DESSERT, 'Dessert'),
-        (CATEGORY_DRINK, 'Drink'),
-    ]
-
     name = models.CharField(max_length=120)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=60)
     price = models.FloatField(default=0, null=True, blank=True)
     image = models.FileField(upload_to='menu_items/', blank=True)
     is_available = models.BooleanField(default=True)

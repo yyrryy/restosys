@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 # Ignore migration files
 **/migrations/*.py
-
 # But keep __init__.py
 !**/migrations/__init__.py
+img/*
+push.py

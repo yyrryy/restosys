@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, InventoryHistory, InventoryItem, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
+from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
 
 
 @admin.register(UserProfile)
@@ -21,6 +21,12 @@ class DiningTableAdmin(admin.ModelAdmin):
 class MenuItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'is_available')
     list_filter = ('category', 'is_available')
+    search_fields = ('name',)
+
+
+@admin.register(MenuCategory)
+class MenuCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name',)
     search_fields = ('name',)
 
 

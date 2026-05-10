@@ -57,6 +57,24 @@
                 <button type="submit">Save Component</button>
             </form>
         </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Add category</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="category">
+                {{ forms.category.as_p }}
+                <button type="submit">Save Category</button>
+            </form>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Add user & role</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="user">
+                {{ forms.user.as_p }}
+                <button type="submit">Save User</button>
+            </form>
+        </article>
     </section>
 
     <section class="content-grid">
@@ -68,7 +86,7 @@
                     {% for item in menu_items %}
                         <tr>
                             <td>{{ item.name }}</td>
-                            <td>{{ item.get_category_display }}</td>
+                            <td>{{ item.category }}</td>
                             <td>{{ item.price }}</td>
                             <td><img class="menu-thumb" src="{{ item.display_image }}" alt="{{ item.name }}"></td>
                             <td>
@@ -95,6 +113,37 @@
                         <tr><td>{{ table.name }}</td><td>{{ table.seats }}</td><td>{{ table.get_status_display }}</td></tr>
                     {% empty %}
                         <tr><td colspan="3">No tables yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Categories</h2></div>
+            <table>
+                <thead><tr><th>Name</th></tr></thead>
+                <tbody>
+                    {% for category in categories %}
+                        <tr><td>{{ category.name }}</td></tr>
+                    {% empty %}
+                        <tr><td>No categories yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+        <article class="panel">
+            <div class="panel-heading"><h2>Users & roles</h2></div>
+            <table>
+                <thead><tr><th>Username</th><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+                <tbody>
+                    {% for account in users_with_roles %}
+                        <tr>
+                            <td>{{ account.username }}</td>
+                            <td>{{ account.full_name|default:"-" }}</td>
+                            <td>{{ account.email|default:"-" }}</td>
+                            <td>{{ account.role }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">No users yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

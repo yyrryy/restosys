@@ -5,6 +5,7 @@ from functools import wraps
 from multiprocessing import context
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Count, Sum
@@ -15,14 +16,16 @@ from django.template.loader import render_to_string
 from .forms import (
     CashDeskEntryForm,
     DiningTableForm,
+    AdminUserCreateForm,
     InventoryItemForm,
+    MenuCategoryForm,
     MenuItemForm,
     OrderCreateForm,
     PurchaseForm,
     RecipeComponentForm,
     SupplierForm,
 )
-from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuItem, Order, OrderItem, Purchase, PurchaseItem, Supplier, UserProfile, Scalbarcodescan
+from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, Supplier, UserProfile, Scalbarcodescan
 
 
 def user_role(user):
@@ -181,11 +184,14 @@ def owner_dashboard(request):
 @login_required
 @role_required(UserProfile.ROLE_ADMIN)
 def admin_dashboard(request):
+    User = get_user_model()
     forms = {
         'table': DiningTableForm(prefix='table'),
         'menu': MenuItemForm(prefix='menu'),
         'inventory': InventoryItemForm(prefix='inventory'),
         'component': RecipeComponentForm(prefix='component'),
+        'category': MenuCategoryForm(prefix='category'),
+        'user': AdminUserCreateForm(prefix='user'),
     }
 
     if request.method == 'POST':
@@ -196,6 +202,8 @@ def admin_dashboard(request):
                 'menu': MenuItemForm,
                 'inventory': InventoryItemForm,
                 'component': RecipeComponentForm,
+                'category': MenuCategoryForm,
+                'user': AdminUserCreateForm,
             }[form_type]
             files = request.FILES if form_type == 'menu' else None
             forms[form_type] = form_class(request.POST, files, prefix=form_type)
@@ -205,16 +213,29 @@ def admin_dashboard(request):
                 return redirect('restaurant:admin_dashboard')
 
     context = dashboard_context('admin', request.user)
+    users = User.objects.select_related('profile').order_by('username')
+    users_with_roles = [
+        {
+            'username': account.username,
+            'full_name': account.get_full_name(),
+            'email': account.email,
+            'role': getattr(getattr(account, 'profile', None), 'get_role_display', lambda: '-')(),
+        }
+        for account in users
+    ]
     context.update({
         'forms': forms,
         'tables': DiningTable.objects.all(),
+        'categories': MenuCategory.objects.all(),
+        'users_with_roles': users_with_roles,
         'menu_items': MenuItem.objects.prefetch_related('components__inventory_item'),
         'inventory_items': InventoryItem.objects.all(),
         'stats': [
             {'label': 'Menu items', 'value': MenuItem.objects.count()},
+            {'label': 'Categories', 'value': MenuCategory.objects.count()},
             {'label': 'Tables', 'value': DiningTable.objects.count()},
+            {'label': 'Users', 'value': users.count()},
             {'label': 'Inventory items', 'value': InventoryItem.objects.count()},
-            {'label': 'Orders today', 'value': Order.objects.count()},
         ],
     })
     return render(request, 'restaurant/admin_dashboard.html', context)
@@ -288,11 +309,14 @@ def pos_dashboard(request):
             return redirect('restaurant:pos_dashboard')
 
     context = dashboard_context('pos', request.user)
+    menu_categories = list(MenuCategory.objects.values_list('name', 'name'))
+    if not menu_categories:
+        menu_categories = list(menu_items.values_list('category', 'category').distinct())
     context.update({
         'form': form,
         'is_cashier_mode': is_cashier_mode,
         'menu_items': menu_items,
-        'menu_categories': MenuItem.CATEGORY_CHOICES,
+        'menu_categories': menu_categories,
     })
     return render(request, 'restaurant/pos.html', context)
 
