@@ -24,8 +24,8 @@ def runserver():
 if __name__ == '__main__':
     runserver()
     sleep(2)  # Wait a moment to ensure the server is up
-    # open edge after the server is up
-    os.system(f'start chrome http://{HOST}:{PORT}')
+    # open edge after the server is up, edge not chrome
+    
 
 
 # def lunchchrome():
