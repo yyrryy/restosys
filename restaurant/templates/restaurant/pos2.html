@@ -1,0 +1,78 @@
+{% extends 'restaurant/base.html' %}
+{% load static %}
+
+{% block title %}POS 2 | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">{% if is_cashier_mode %}Cashier checkout{% else %}Waiter order entry{% endif %}</p>
+            <h1>POS 2</h1>
+        </div>
+        {% if is_cashier_mode %}
+            <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Back to Cashier</a>
+        {% else %}
+            <a class="button-link" href="{% url 'restaurant:waiter_dashboard' %}">Back to Waiter</a>
+        {% endif %}
+    </header>
+
+    <section class="panel order-panel pos-page-panel">
+        <form class="pos-shell" method="post" id="pos-order-form">
+            {% csrf_token %}
+            <section class="pos-board">
+                <div class="pos-controls {% if is_cashier_mode %}cashier-pos-controls{% endif %}">
+                    <label for="{{ form.table.id_for_label }}">Table</label>
+                    {{ form.table }}
+                    <label for="{{ form.customer_name.id_for_label }}">Customer</label>
+                    {{ form.customer_name }}
+                    {% if is_cashier_mode %}
+                        <label for="{{ form.cashier_waiter.id_for_label }}">Waiter</label>
+                        {{ form.cashier_waiter }}
+                    {% endif %}
+                </div>
+
+                <div class="category-strip" aria-label="Menu categories">
+                    <button class="category-chip" type="button" data-category="all">All</button>
+                    {% for value, label in menu_categories %}
+                        <button class="category-chip" type="button" data-category="{{ value }}">{{ label }}</button>
+                    {% endfor %}
+                </div>
+
+                <div
+                    class="pos-grid"
+                    id="pos-grid"
+                    data-items-url="{% url 'restaurant:pos2_category_items' %}"
+                >
+                    <p class="empty-state">Select a category to load products.</p>
+                </div>
+
+                <div class="pos-hidden-fields">
+                    {% for field in form %}
+                        {% if field.name != 'table' and field.name != 'customer_name' and field.name != 'cashier_waiter' %}
+                            {{ field }}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </section>
+
+            <aside class="cart-panel">
+                <div class="panel-heading">
+                    <h2>{% if is_cashier_mode %}Receipt{% else %}Ticket{% endif %}</h2>
+                    <button class="ghost-button" type="button" id="clear-cart">Clear</button>
+                </div>
+                <div class="cart-lines" id="cart-lines">
+                    <p class="empty-state">Tap dishes to build the order.</p>
+                </div>
+                <div class="cart-total">
+                    <span>Total</span>
+                    <strong id="cart-total">0.00</strong>
+                </div>
+                <button type="submit">{% if is_cashier_mode %}Checkout Paid{% else %}Send to Kitchen{% endif %}</button>
+            </aside>
+        </form>
+    </section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'restaurant/js/waiter-pos2.js' %}"></script>
+{% endblock %}

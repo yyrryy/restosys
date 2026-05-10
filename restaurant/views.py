@@ -213,28 +213,18 @@ def admin_dashboard(request):
                 return redirect('restaurant:admin_dashboard')
 
     context = dashboard_context('admin', request.user)
-    users = User.objects.select_related('profile').order_by('username')
-    users_with_roles = [
-        {
-            'username': account.username,
-            'full_name': account.get_full_name(),
-            'email': account.email,
-            'role': getattr(getattr(account, 'profile', None), 'get_role_display', lambda: '-')(),
-        }
-        for account in users
-    ]
     context.update({
         'forms': forms,
         'tables': DiningTable.objects.all(),
         'categories': MenuCategory.objects.all(),
-        'users_with_roles': users_with_roles,
+        'users': User.objects.select_related('profile').order_by('username'),
         'menu_items': MenuItem.objects.prefetch_related('components__inventory_item'),
         'inventory_items': InventoryItem.objects.all(),
         'stats': [
             {'label': 'Menu items', 'value': MenuItem.objects.count()},
             {'label': 'Categories', 'value': MenuCategory.objects.count()},
             {'label': 'Tables', 'value': DiningTable.objects.count()},
-            {'label': 'Users', 'value': users.count()},
+            {'label': 'Users', 'value': User.objects.count()},
             {'label': 'Inventory items', 'value': InventoryItem.objects.count()},
         ],
     })
@@ -319,6 +309,67 @@ def pos_dashboard(request):
         'menu_categories': menu_categories,
     })
     return render(request, 'restaurant/pos.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_WAITER, UserProfile.ROLE_CASHIER)
+def pos2_dashboard(request):
+    role = user_role(request.user)
+    menu_items = MenuItem.objects.filter(is_available=True)
+    is_cashier_mode = role == UserProfile.ROLE_CASHIER
+    form = OrderCreateForm(
+        request.POST or None,
+        menu_items=menu_items,
+        require_table=not is_cashier_mode,
+        include_waiter_choice=is_cashier_mode,
+    )
+
+    if request.method == 'POST' and form.is_valid():
+        if not form.selected_items():
+            messages.error(request, 'Choose at least one dish before checkout.')
+        elif is_cashier_mode:
+            order, stock_message = create_paid_pos_order(form, menu_items)
+            if order:
+                messages.success(request, f'POS order #{order.pk} paid.')
+                messages.success(request, stock_message)
+                return redirect('restaurant:pos2_dashboard')
+            messages.error(request, stock_message)
+        else:
+            order = create_order_from_form(form, menu_items, request.user)
+            messages.success(request, f'Order #{order.pk} sent to kitchen.')
+            return redirect('restaurant:pos2_dashboard')
+
+    context = dashboard_context('pos', request.user)
+    menu_categories = list(MenuCategory.objects.values_list('name', 'name'))
+    if not menu_categories:
+        menu_categories = list(menu_items.values_list('category', 'category').distinct())
+    context.update({
+        'form': form,
+        'is_cashier_mode': is_cashier_mode,
+        'menu_categories': menu_categories,
+    })
+    return render(request, 'restaurant/pos2.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_WAITER, UserProfile.ROLE_CASHIER)
+def pos2_category_items(request):
+    category = request.GET.get('category', '').strip()
+    menu_items = MenuItem.objects.filter(is_available=True)
+    if category and category != 'all':
+        menu_items = menu_items.filter(category=category)
+
+    items = [
+        {
+            'id': item.pk,
+            'name': item.name,
+            'category': item.category,
+            'price': float(item.price or 0),
+            'display_image': item.display_image,
+        }
+        for item in menu_items
+    ]
+    return JsonResponse({'items': items})
 
 
 @login_required
