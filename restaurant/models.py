@@ -143,7 +143,10 @@ class InventoryItem(models.Model):
 
     @property
     def needs_reorder(self):
-        return self.quantity <= self.reorder_level
+        try:
+            return self.quantity <= self.reorder_level
+        except TypeError:
+            return False
 
     @property
     def price_per_kg(self):
