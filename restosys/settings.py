@@ -74,7 +74,7 @@ WSGI_APPLICATION = 'restosys.wsgi.application'
 USE_SQLITE = os.getenv('DEBUG') == 'True' or os.getenv('HOME') == '/home/aaliali'
 usesqlite = USE_SQLITE
 # SQLite mode is treated as local/dev mode (runserver). Non-sqlite is waitress mode.
-DEBUG = USE_SQLITE
+DEBUG = True
 print('usesqlite', usesqlite)
 if usesqlite:
     DATABASES = {
