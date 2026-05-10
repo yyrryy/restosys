@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}RestoSys{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'restaurant/css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'restaurant/css/select2.min.css' %}">
 </head>
 <body>
     <button class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="app-sidebar">
@@ -23,6 +24,10 @@
         <nav class="nav">
             <a class="{% if active == 'owner' %}active{% endif %}" href="{% url 'restaurant:owner_dashboard' %}">Owner</a>
             <a class="{% if active == 'admin' %}active{% endif %}" href="{% url 'restaurant:admin_dashboard' %}">Admin</a>
+            {% if role == 'Owner' or role == 'Admin' %}
+                <a class="{% if active == 'suppliers' %}active{% endif %}" href="{% url 'restaurant:suppliers_dashboard' %}">Suppliers</a>
+                <a class="{% if active == 'purchases' %}active{% endif %}" href="{% url 'restaurant:purchase_dashboard' %}">Purchases</a>
+            {% endif %}
             <a class="{% if active == 'inventory' %}active{% endif %}" href="{% url 'restaurant:inventory_dashboard' %}">Inventory</a>
             {% if role == 'Owner' or role == 'Waiter' or role == 'Cashier' or active == 'pos' %}
                 <a class="{% if active == 'pos' %}active{% endif %}" href="{% url 'restaurant:pos_dashboard' %}">POS</a>
@@ -50,6 +55,8 @@
         {% block content %}{% endblock %}
     </main>
     <script src="{% static 'restaurant/js/jquery.js' %}"></script>
+    <script src="{% static 'restaurant/js/select2.min.js' %}"></script>
     <script src="{% static 'restaurant/js/functions.js' %}"></script>
+    {% block js %}{% endblock %}
 </body>
 </html>

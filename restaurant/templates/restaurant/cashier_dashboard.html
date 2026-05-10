@@ -1,4 +1,5 @@
 {% extends 'restaurant/base.html' %}
+{% load static %}
 
 {% block title %}Cashier Dashboard | RestoSys{% endblock %}
 
@@ -8,15 +9,22 @@
             <p class="eyebrow">Cashier station</p>
             <h1>Payments and receipts</h1>
         </div>
-        <!-- <a class="button-link" href="{% url 'restaurant:pos_dashboard' %}">Open POS</a> -->
+        <a class="button-link" href="{% url 'restaurant:cashier_barcode_scanner' %}">Open Barcode Scanner</a>
     </header>
 
     <section class="stats-grid">
         {% for stat in stats %}
-            <article class="metric-card">
-                <span>{{ stat.label }}</span>
-                <strong>{{ stat.value }}</strong>
-            </article>
+            {% if stat.url %}
+                <a class="metric-card metric-card-link" href="{% url stat.url %}">
+                    <span>{{ stat.label }}</span>
+                    <strong>{{ stat.value }}</strong>
+                </a>
+            {% else %}
+                <article class="metric-card">
+                    <span>{{ stat.label }}</span>
+                    <strong>{{ stat.value }}</strong>
+                </article>
+            {% endif %}
         {% endfor %}
     </section>
 
@@ -33,4 +41,66 @@
         </div>
         {% include 'restaurant/partials/order_table.html' with orders=paid_orders %}
     </section>
+
+    <div id="cashier-details-overlay" class="cashier-details-overlay"></div>
+    <aside id="cashier-details-drawer" class="cashier-details-drawer">
+        <div class="cashier-drawer-head">
+            <h2>Order details</h2>
+            <button type="button" id="cashier-drawer-cancel" class="ghost-button">Cancel</button>
+        </div>
+        <p class="purchase-selected"><strong>Order:</strong> <span id="drawer-order-id">-</span></p>
+        <p class="purchase-selected"><strong>Table:</strong> <span id="drawer-order-table">-</span></p>
+        <p class="purchase-selected"><strong>Status:</strong> <span id="drawer-order-status">-</span></p>
+        <p class="purchase-selected"><strong>Total:</strong> <span id="drawer-order-total">0.00</span></p>
+
+        <table class="spacing-top">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Line</th>
+                </tr>
+            </thead>
+            <tbody id="drawer-items-body">
+                <tr>
+                    <td colspan="4">No item selected.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="purchase-builder spacing-top">
+            <h3>Change calculator</h3>
+            <p class="purchase-selected"><strong>Cash received:</strong> <span id="drawer-cash-received">0.00</span></p>
+            <div class="bill-grid" id="bill-grid">
+                <button type="button" class="bill-button" data-value="5">5</button>
+                <button type="button" class="bill-button" data-value="10">10</button>
+                <button type="button" class="bill-button" data-value="20">20</button>
+                <button type="button" class="bill-button" data-value="50">50</button>
+                <button type="button" class="bill-button" data-value="100">100</button>
+                <button type="button" class="bill-button" data-value="200">200</button>
+                <button type="button" class="bill-button" data-value="500">500</button>
+                <button type="button" class="bill-button" data-value="1000">1000</button>
+            </div>
+            <div class="bill-actions">
+                <button type="button" id="bill-undo" class="ghost-button">Undo last</button>
+                <button type="button" id="bill-reset" class="ghost-button">Reset</button>
+            </div>
+            <p class="purchase-selected"><strong>Change:</strong> <span id="drawer-change-result">0.00</span></p>
+            <p class="purchase-selected" id="drawer-change-note">Tap bills to calculate change.</p>
+        </div>
+        <form method="post" class="paiment-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <button type="submit">Mark Paid</button>
+        </form>
+
+    </aside>
+{% endblock %}
+
+{% block js %}
+    <script>
+        window.cashierDetailsUrlTemplate = "{% url 'restaurant:cashier_order_details' 0 %}";
+    </script>
+    <script src="{% static 'restaurant/js/cashier-details.js' %}"></script>
 {% endblock %}

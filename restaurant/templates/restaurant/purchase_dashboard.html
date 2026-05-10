@@ -1,0 +1,264 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Purchases | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Procurement</p>
+            <h1>Purchases</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:suppliers_dashboard' %}">View Suppliers</a>
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="content-grid">
+        <article class="panel">
+            <div class="panel-heading"><h2>Purchase lines</h2></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Quantité</th>
+                        <th>Prix</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="purchase-lines-table-body">
+                    <tr>
+                        <td colspan="5">No products added yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </article>
+
+        <article class="panel">
+            <div class="panel-heading"><h2>Record purchase</h2></div>
+            <form class="stack-form" method="post" id="purchase-form" data-search-url="search-items/">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="hidden" id="purchase-lines-json" name="purchase_lines_json" value="{{ purchase_lines_json|escape }}">
+
+                <div class="purchase-builder">
+                    <label for="purchase-product-select">Search product</label>
+                    <select id="purchase-product-select" style="width: 100%"></select>
+
+                    <p class="purchase-selected" id="purchase-selected-product">No product selected</p>
+                    <div class="purchase-line-inputs">
+                        <div>
+                            <label for="purchase-quantity-input">Quantité</label>
+                            <input id="purchase-quantity-input" type="number" min="0.01" step="0.01" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label for="purchase-price-input">Prix</label>
+                            <input id="purchase-price-input" type="number" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label for="purchase-line-total">Total</label>
+                            <input id="purchase-line-total" type="text" readonly value="0.00">
+                        </div>
+                    </div>
+
+                    <button type="button" id="purchase-add-line" class="ghost-button">Add to table</button>
+                </div>
+                <button type="submit">Save Purchase</button>
+            </form>
+        </article>
+
+    </section>
+
+    <script>
+        (function () {
+            function initPurchasePage() {
+                if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+                    return;
+                }
+
+            const form = document.getElementById('purchase-form');
+            if (!form) return;
+
+            const searchUrl = new URL(form.dataset.searchUrl, window.location.href).toString();
+            const productSelect = window.jQuery('#purchase-product-select');
+            const selectedText = document.getElementById('purchase-selected-product');
+            const quantityInput = document.getElementById('purchase-quantity-input');
+            const priceInput = document.getElementById('purchase-price-input');
+            const lineTotalInput = document.getElementById('purchase-line-total');
+            const addLineButton = document.getElementById('purchase-add-line');
+            const linesTableBody = document.getElementById('purchase-lines-table-body');
+            const hiddenLinesInput = document.getElementById('purchase-lines-json');
+
+            let selectedProduct = null;
+            let purchaseLines = [];
+
+            try {
+                const parsed = JSON.parse(hiddenLinesInput.value || '[]');
+                if (Array.isArray(parsed)) {
+                    purchaseLines = parsed.filter(function (line) {
+                        return line && typeof line === 'object' && line.inventory_item_id;
+                    }).map(function (line) {
+                        return {
+                            inventory_item_id: Number(line.inventory_item_id),
+                            name: String(line.name || 'Product'),
+                            unit: String(line.unit || ''),
+                            quantity: Number(line.quantity || 0),
+                            unit_cost: Number(line.unit_cost || 0)
+                        };
+                    });
+                }
+            } catch (e) {
+                purchaseLines = [];
+            }
+
+            function toMoney(value) {
+                return Number(value || 0).toFixed(2);
+            }
+
+            function updateLineTotalPreview() {
+                const qty = Number(quantityInput.value || 0);
+                const price = Number(priceInput.value || 0);
+                lineTotalInput.value = toMoney(qty * price);
+            }
+
+            function syncHiddenLines() {
+                hiddenLinesInput.value = JSON.stringify(purchaseLines);
+            }
+
+            function renderLinesTable() {
+                if (!purchaseLines.length) {
+                    linesTableBody.innerHTML = '<tr><td colspan="5">No products added yet.</td></tr>';
+                    syncHiddenLines();
+                    return;
+                }
+
+                linesTableBody.innerHTML = '';
+                purchaseLines.forEach(function (line, index) {
+                    const row = document.createElement('tr');
+                    const lineTotal = Number(line.quantity) * Number(line.unit_cost);
+                    row.innerHTML = `
+                        <td>${line.name}</td>
+                        <td>${toMoney(line.quantity)}</td>
+                        <td>${toMoney(line.unit_cost)}</td>
+                        <td>${toMoney(lineTotal)}</td>
+                        <td><button type="button" class="ghost-button" data-index="${index}">Remove</button></td>
+                    `;
+                    linesTableBody.appendChild(row);
+                });
+
+                syncHiddenLines();
+            }
+
+            function selectProduct(item) {
+                selectedProduct = item;
+                selectedText.textContent = `Selected: ${item.name} (${item.unit})`;
+            }
+
+            productSelect.select2({
+                placeholder: 'Type at least 1 character',
+                width: '100%',
+                minimumInputLength: 1,
+                ajax: {
+                    url: searchUrl,
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return { q: params.term || '' };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: (data.results || []).map(function (item) {
+                                return {
+                                    id: item.id,
+                                    text: `${item.name} (${item.unit})`,
+                                    name: item.name,
+                                    unit: item.unit
+                                };
+                            })
+                        };
+                    }
+                }
+            });
+
+            productSelect.on('select2:select', function (event) {
+                const item = event.params.data;
+                selectProduct({
+                    id: Number(item.id),
+                    name: item.name,
+                    unit: item.unit
+                });
+            });
+
+            productSelect.on('select2:clear', function () {
+                selectedProduct = null;
+                selectedText.textContent = 'No product selected';
+            });
+
+            addLineButton.addEventListener('click', function () {
+                const quantity = Number(quantityInput.value || 0);
+                const unitCost = Number(priceInput.value || 0);
+                if (!selectedProduct) {
+                    alert('Select a product first.');
+                    return;
+                }
+                if (quantity <= 0) {
+                    alert('Quantity must be greater than zero.');
+                    return;
+                }
+                if (unitCost < 0) {
+                    alert('Price cannot be negative.');
+                    return;
+                }
+
+                purchaseLines.push({
+                    inventory_item_id: Number(selectedProduct.id),
+                    name: selectedProduct.name,
+                    unit: selectedProduct.unit,
+                    quantity: quantity,
+                    unit_cost: unitCost
+                });
+                quantityInput.value = '';
+                priceInput.value = '';
+                lineTotalInput.value = '0.00';
+                selectedProduct = null;
+                selectedText.textContent = 'No product selected';
+                productSelect.val(null).trigger('change');
+                renderLinesTable();
+            });
+
+            linesTableBody.addEventListener('click', function (event) {
+                const button = event.target.closest('button[data-index]');
+                if (!button) return;
+                const index = Number(button.dataset.index);
+                if (Number.isNaN(index)) return;
+                purchaseLines.splice(index, 1);
+                renderLinesTable();
+            });
+
+            form.addEventListener('submit', function (event) {
+                if (!purchaseLines.length) {
+                    event.preventDefault();
+                    alert('Add at least one product before saving.');
+                }
+            });
+
+            quantityInput.addEventListener('input', updateLineTotalPreview);
+            priceInput.addEventListener('input', updateLineTotalPreview);
+            renderLinesTable();
+            }
+
+            if (document.readyState === 'complete') {
+                initPurchasePage();
+            } else {
+                window.addEventListener('load', initPurchasePage);
+            }
+        }());
+    </script>
+{% endblock %}

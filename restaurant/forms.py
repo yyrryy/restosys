@@ -1,7 +1,8 @@
 from django import forms
+from django.forms import BaseFormSet, formset_factory
 from django.contrib.auth import get_user_model
 
-from .models import DiningTable, InventoryItem, MenuItem, RecipeComponent, UserProfile
+from .models import CashDeskEntry, DiningTable, InventoryItem, MenuItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
 
 
 class DiningTableForm(forms.ModelForm):
@@ -22,7 +23,7 @@ class MenuItemForm(forms.ModelForm):
 class InventoryItemForm(forms.ModelForm):
     class Meta:
         model = InventoryItem
-        fields = ['name', 'quantity', 'unit', 'reorder_level']
+        fields = ['name', 'plu', 'price', 'quantity', 'unit', 'reorder_level']
 
 
 class RecipeComponentForm(forms.ModelForm):
@@ -68,3 +69,69 @@ class OrderCreateForm(forms.Form):
             item_id = int(field_name.replace('item_', ''))
             items.append((item_id, quantity))
         return items
+
+
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = ['name', 'contact_person', 'phone', 'email', 'notes']
+
+
+class PurchaseForm(forms.ModelForm):
+    class Meta:
+        model = Purchase
+        fields = ['supplier', 'purchase_number', 'notes']
+
+
+class PurchaseItemForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseItem
+        fields = ['inventory_item', 'quantity', 'unit_cost']
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data['quantity']
+        if quantity <= 0:
+            raise forms.ValidationError('Quantity must be greater than zero.')
+        return quantity
+
+    def clean_unit_cost(self):
+        unit_cost = self.cleaned_data['unit_cost']
+        if unit_cost < 0:
+            raise forms.ValidationError('Unit cost cannot be negative.')
+        return unit_cost
+
+
+class CashDeskEntryForm(forms.ModelForm):
+    class Meta:
+        model = CashDeskEntry
+        fields = ['entry_type', 'amount', 'reason']
+
+    def clean_amount(self):
+        amount = self.cleaned_data['amount']
+        if amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        return amount
+
+
+class BasePurchaseItemFormSet(BaseFormSet):
+    def clean(self):
+        super().clean()
+        has_line = False
+        for form in self.forms:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+            if form.cleaned_data.get('DELETE'):
+                continue
+            if form.cleaned_data.get('inventory_item') and form.cleaned_data.get('quantity'):
+                has_line = True
+                break
+        if not has_line:
+            raise forms.ValidationError('Add at least one item to the purchase.')
+
+
+PurchaseItemFormSet = formset_factory(
+    PurchaseItemForm,
+    formset=BasePurchaseItemFormSet,
+    extra=3,
+    can_delete=True,
+)

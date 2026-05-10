@@ -1,0 +1,95 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}{{ inventory_item.name }} History | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Inventory movement</p>
+            <h1>{{ inventory_item.name }} history</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:inventory_dashboard' %}">Back to Inventory</a>
+    </header>
+
+    <section class="split-grid">
+        <article class="panel">
+            <div class="panel-heading">
+                <h2>Stock IN</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Source</th>
+                        <th>Reference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in history_ins %}
+                        <tr>
+                            <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
+                            <td><span class="status status-ready">+{{ entry.quantity }}</span></td>
+                            <td>{{ entry.source }}</td>
+                            <td>{{ entry.reference }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4">No stock in history yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+
+        <article class="panel">
+            <div class="panel-heading">
+                <h2>Stock OUT</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Source</th>
+                        <th>Reference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in outs %}
+                <tr>
+                <td>
+                    {% if entry.barcode %}
+                    {{ entry.date|date:"Y-m-d H:i" }}
+                    {% else %}
+                    {{ entry.order.date|date:"Y-m-d H:i" }}
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status status-low">
+                    -
+                    {% if entry.barcode %}
+                        {{ entry.weight }}
+                    {% else %}
+                        {{ entry.quantity }}
+                    {% endif %}
+                    </span>
+                </td>
+                <td>
+                    {% if entry.barcode %}Scale barcode scan{% else %}Dish order 
+                recipe{% endif %}
+                </td>
+                <td>
+                    {% if entry.barcode %}
+                    {{ entry.barcode }}
+                    {% else %}
+                    Order #{{ entry.order.id }} - {{ entry.menu_item.name }}
+                    {% endif %}
+                </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </article>
+    </section>
+{% endblock %}

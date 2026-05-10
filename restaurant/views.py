@@ -1,15 +1,28 @@
+from datetime import timezone
+import json
+from decimal import Decimal, InvalidOperation
 from functools import wraps
+from multiprocessing import context
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 
-from .forms import DiningTableForm, InventoryItemForm, MenuItemForm, OrderCreateForm, RecipeComponentForm
-from .models import DiningTable, InventoryItem, MenuItem, Order, OrderItem, UserProfile
+from .forms import (
+    CashDeskEntryForm,
+    DiningTableForm,
+    InventoryItemForm,
+    MenuItemForm,
+    OrderCreateForm,
+    PurchaseForm,
+    RecipeComponentForm,
+    SupplierForm,
+)
+from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuItem, Order, OrderItem, Purchase, PurchaseItem, Supplier, UserProfile, Scalbarcodescan
 
 
 def user_role(user):
@@ -18,10 +31,13 @@ def user_role(user):
     return getattr(getattr(user, 'profile', None), 'role', UserProfile.ROLE_WAITER)
 
 
-def dashboard_context(active):
+def dashboard_context(active, user=None):
+    role = active.title()
+    if user is not None:
+        role = user_role(user).title()
     return {
         'active': active,
-        'role': active.title(),
+        'role': role,
     }
 
 
@@ -124,8 +140,18 @@ def deduct_order_stock(order):
 
         for inventory_id, data in required.items():
             inventory_item = inventory_by_id[inventory_id]
+            previous_quantity = inventory_item.quantity
             inventory_item.quantity -= data['quantity']
             inventory_item.save(update_fields=['quantity'])
+            InventoryHistory.objects.create(
+                inventory_item=inventory_item,
+                source=InventoryHistory.SOURCE_RECIPE_ORDER,
+                quantity_change=-data['quantity'],
+                quantity_before=previous_quantity,
+                quantity_after=inventory_item.quantity,
+                reference=f'Order #{order.pk}',
+                created_by=order.waiter,
+            )
 
         order.stock_deducted = True
         order.save(update_fields=['stock_deducted'])
@@ -138,7 +164,7 @@ def deduct_order_stock(order):
 def owner_dashboard(request):
     orders = Order.objects.prefetch_related('items')
     paid_total = sum(order.total for order in orders.filter(status=Order.STATUS_PAID))
-    context = dashboard_context('owner')
+    context = dashboard_context('owner', request.user)
     context.update({
         'stats': [
             {'label': 'Total orders', 'value': orders.count()},
@@ -178,7 +204,7 @@ def admin_dashboard(request):
                 messages.success(request, 'Saved successfully.')
                 return redirect('restaurant:admin_dashboard')
 
-    context = dashboard_context('admin')
+    context = dashboard_context('admin', request.user)
     context.update({
         'forms': forms,
         'tables': DiningTable.objects.all(),
@@ -198,7 +224,7 @@ def admin_dashboard(request):
 @role_required(UserProfile.ROLE_ADMIN)
 def inventory_dashboard(request):
     inventory_items = InventoryItem.objects.all()
-    context = dashboard_context('inventory')
+    context = dashboard_context('inventory', request.user)
     context.update({
         'inventory_items': inventory_items,
         'stats': [
@@ -209,6 +235,28 @@ def inventory_dashboard(request):
         ],
     })
     return render(request, 'restaurant/inventory_dashboard.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def inventory_item_history(request, item_id):
+    inventory_item = get_object_or_404(InventoryItem, pk=item_id)
+    out_from_scal = Scalbarcodescan.objects.filter(inventory_item=inventory_item)
+    out_from_orders = OrderItem.objects.filter(menu_item__components__inventory_item=inventory_item, order__status=Order.STATUS_SERVED)
+    in_from_purchases = PurchaseItem.objects.filter(inventory_item=inventory_item)
+    outs = list(out_from_scal) + list(out_from_orders)
+    
+    # outs = sorted(
+    #         list(out_from_scal) + list(out_from_orders),
+    #         key=lambda x: getattr(x, 'scanned_at', None) or getattr(x.order, 'date', None) or timezone.now(),
+    #         reverse=True
+    #     )
+    context = {
+        'inventory_item': inventory_item,
+        'outs': outs,
+        'history_ins': in_from_purchases
+    }
+    return render(request, 'restaurant/inventory_history.html', context)
 
 
 @login_required
@@ -239,7 +287,7 @@ def pos_dashboard(request):
             messages.success(request, f'Order #{order.pk} sent to kitchen.')
             return redirect('restaurant:pos_dashboard')
 
-    context = dashboard_context('pos')
+    context = dashboard_context('pos', request.user)
     context.update({
         'form': form,
         'is_cashier_mode': is_cashier_mode,
@@ -252,7 +300,7 @@ def pos_dashboard(request):
 @login_required
 @role_required(UserProfile.ROLE_WAITER)
 def waiter_dashboard(request):
-    context = dashboard_context('waiter')
+    context = dashboard_context('waiter', request.user)
     context.update({
         'orders': Order.objects.filter(waiter=request.user).prefetch_related('items__menu_item')[:20],
         'ready_orders': Order.objects.filter(waiter=request.user, status=Order.STATUS_READY),
@@ -285,7 +333,7 @@ def waiter_orders_live(request):
 @login_required
 @role_required(UserProfile.ROLE_KITCHEN)
 def kitchen_dashboard(request):
-    context = dashboard_context('kitchen')
+    context = dashboard_context('kitchen', request.user)
     context.update({
         'orders': Order.objects.exclude(status__in=[Order.STATUS_READY, Order.STATUS_SERVED, Order.STATUS_PAID]).prefetch_related('items__menu_item', 'table'),
         'ready_orders': Order.objects.filter(status=Order.STATUS_READY).prefetch_related('items__menu_item', 'table')[:10],
@@ -319,19 +367,344 @@ def kitchen_orders_live(request):
 def cashier_dashboard(request):
     payable_statuses = [Order.STATUS_READY, Order.STATUS_SERVED]
     payable_orders = Order.objects.filter(status__in=payable_statuses).prefetch_related('items__menu_item', 'table')
-    paid_orders = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items__menu_item', 'table')[:20]
-    context = dashboard_context('cashier')
+    paid_orders_queryset = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items__menu_item', 'table')
+    paid_orders = paid_orders_queryset[:20]
+    cash_collected = sum(order.total for order in paid_orders_queryset)
+    context = dashboard_context('cashier', request.user)
     context.update({
         'stats': [
             {'label': 'Awaiting payment', 'value': payable_orders.count()},
             {'label': 'Paid orders', 'value': Order.objects.filter(status=Order.STATUS_PAID).count()},
             {'label': 'Open tables', 'value': DiningTable.objects.exclude(status=DiningTable.STATUS_AVAILABLE).count()},
-            {'label': 'Cash collected', 'value': sum(order.total for order in Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items'))},
+            {'label': 'Cash collected', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'},
         ],
         'payable_orders': payable_orders,
         'paid_orders': paid_orders,
     })
     return render(request, 'restaurant/cashier_dashboard.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def cashier_order_details(request, order_id):
+    payable_statuses = [Order.STATUS_READY, Order.STATUS_SERVED]
+    order = get_object_or_404(
+        Order.objects.filter(status__in=payable_statuses).prefetch_related('items__menu_item', 'table'),
+        pk=order_id,
+    )
+    items = [
+        {
+            'name': item.menu_item.name,
+            'quantity': item.quantity,
+            'unit_price': float(item.unit_price),
+            'line_total': float(item.line_total),
+        }
+        for item in order.items.all()
+    ]
+    return JsonResponse({
+        'id': order.id,
+        'table': str(order.table) if order.table else 'Takeaway',
+        'status': order.get_status_display(),
+        'total': float(order.total),
+        'items': items,
+    })
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def cash_desk_dashboard(request):
+    form = CashDeskEntryForm(prefix='cashdesk')
+    if request.method == 'POST':
+        form = CashDeskEntryForm(request.POST, prefix='cashdesk')
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.created_by = request.user
+            entry.save()
+            messages.success(request, f'{entry.get_entry_type_display()} entry saved.')
+            return redirect('restaurant:cash_desk_dashboard')
+
+    entries = CashDeskEntry.objects.select_related('created_by')
+    in_total = entries.filter(entry_type=CashDeskEntry.TYPE_IN).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    out_total = entries.filter(entry_type=CashDeskEntry.TYPE_OUT).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    paid_orders = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items')
+    order_cash_total = sum(order.total for order in paid_orders)
+    context = dashboard_context('cashier', request.user)
+    context.update({
+        'form': form,
+        'entries': entries[:100],
+        'stats': [
+            {'label': 'Order cash collected', 'value': order_cash_total},
+            {'label': 'Cash in', 'value': in_total},
+            {'label': 'Cash out', 'value': out_total},
+            {'label': 'Net cash desk', 'value': in_total - out_total},
+        ],
+    })
+    return render(request, 'restaurant/cash_desk_dashboard.html', context)
+
+
+def parse_scale_barcode(barcode):
+    if not barcode:
+        return None, 'Scan a barcode first.'
+    if not barcode.isdigit() or len(barcode) < 12:
+        return None, 'Barcode must contain at least 12 digits.'
+
+    return {
+        'raw': barcode,
+        'prefix': barcode[:2],
+        'plu': int(barcode[2:7]),
+        'price': Decimal(int(barcode[7:12])) / Decimal('100'),
+    }, None
+
+
+def process_scale_scan(user, barcode_input):
+    parsed_barcode, error = parse_scale_barcode(barcode_input)
+    if error:
+        return {'ok': False, 'error': error}
+
+    with transaction.atomic():
+        try:
+            product = InventoryItem.objects.select_for_update().get(plu=parsed_barcode['plu'])
+        except InventoryItem.DoesNotExist:
+            return {'ok': False, 'error': f'No product found for PLU {parsed_barcode["plu"]}.'}
+
+        if product.price is None or product.price <= 0:
+            return {'ok': False, 'error': f'{product.name} has no valid price.'}
+
+        deducted_quantity = round(float(parsed_barcode['price']) / product.price, 3)
+        if deducted_quantity <= 0:
+            return {'ok': False, 'error': f'Computed quantity is invalid for {product.name}.'}
+        if product.quantity < deducted_quantity:
+            return {
+                'ok': False,
+                'error': (
+                    f'Not enough stock for {product.name}. Need {deducted_quantity} '
+                    f'{product.unit}, have {product.quantity} {product.unit}.'
+                ),
+            }
+        
+        previous_quantity = product.quantity
+        product.quantity -= deducted_quantity
+        product.save(update_fields=['quantity'])
+
+        Scalbarcodescan.objects.create(
+            barcode=parsed_barcode['raw'],
+            inventory_item=product,
+            weight=deducted_quantity,
+            price=parsed_barcode['price'],
+        )
+
+        InventoryHistory.objects.create(
+            inventory_item=product,
+            source=InventoryHistory.SOURCE_BARCODE_SCAN,
+            quantity_change=-deducted_quantity,
+            quantity_before=previous_quantity,
+            quantity_after=product.quantity,
+            barcode=parsed_barcode['raw'],
+            reference=f'PLU {parsed_barcode["plu"]}',
+            created_by=user,
+        )
+
+    result = {
+        'raw': parsed_barcode['raw'],
+        'prefix': parsed_barcode['prefix'],
+        'plu': parsed_barcode['plu'],
+        'price': float(parsed_barcode['price']),
+        'product_name': product.name,
+        'price_per_kg': float(product.price_per_kg),
+        'weight': deducted_quantity,
+        'deducted_quantity': deducted_quantity,
+        'previous_quantity': previous_quantity,
+        'remaining_quantity': product.quantity,
+        'unit': product.unit,
+    }
+    return {
+        'ok': True,
+        'message': (
+            f'Scanned {product.name}: deducted {deducted_quantity} '
+            f'{product.unit}. Remaining {product.quantity} {product.unit}.'
+        ),
+        'result': result,
+    }
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def cashier_barcode_scanner(request):
+    barcode_input = ''
+    barcode_result = None
+    if request.method == 'POST':
+        barcode_input = request.POST.get('barcode', '').strip()
+        scan_response = process_scale_scan(request.user, barcode_input)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse(scan_response, status=200 if scan_response['ok'] else 400)
+        if scan_response['ok']:
+            barcode_result = scan_response['result']
+            messages.success(request, scan_response['message'])
+        else:
+            messages.error(request, scan_response['error'])
+
+    context = dashboard_context('cashier', request.user)
+    context.update({
+        'barcode_input': barcode_input,
+        'barcode_result': barcode_result,
+    })
+    return render(request, 'restaurant/cashier_scanner.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_OWNER, UserProfile.ROLE_ADMIN)
+def purchase_item_search(request):
+    query = request.GET.get('q', '').strip()
+    if len(query) < 1:
+        return JsonResponse({'results': []})
+    items = InventoryItem.objects.filter(name__icontains=query).values('id', 'name', 'unit')[:15]
+    return JsonResponse({'results': list(items)})
+
+
+def parse_purchase_lines(raw_lines):
+    if not raw_lines:
+        return [], ['Add at least one product to the purchase.']
+    try:
+        data = json.loads(raw_lines)
+    except json.JSONDecodeError:
+        return [], ['Purchase lines are invalid.']
+    if not isinstance(data, list) or not data:
+        return [], ['Add at least one product to the purchase.']
+
+    cleaned = []
+    errors = []
+    for index, line in enumerate(data, start=1):
+        if not isinstance(line, dict):
+            errors.append(f'Line {index} is invalid.')
+            continue
+
+        try:
+            inventory_item_id = int(line.get('inventory_item_id'))
+        except (TypeError, ValueError):
+            errors.append(f'Line {index}: select a valid product.')
+            continue
+
+        try:
+            quantity = Decimal(str(line.get('quantity')))
+        except (InvalidOperation, TypeError):
+            errors.append(f'Line {index}: quantity is invalid.')
+            continue
+
+        try:
+            unit_cost = Decimal(str(line.get('unit_cost')))
+        except (InvalidOperation, TypeError):
+            errors.append(f'Line {index}: price is invalid.')
+            continue
+
+        if quantity <= 0:
+            errors.append(f'Line {index}: quantity must be greater than zero.')
+        if unit_cost < 0:
+            errors.append(f'Line {index}: price cannot be negative.')
+
+        cleaned.append({
+            'inventory_item_id': inventory_item_id,
+            'quantity': quantity,
+            'unit_cost': unit_cost,
+        })
+
+    if errors:
+        return [], errors
+    return cleaned, []
+
+
+@login_required
+@role_required(UserProfile.ROLE_OWNER, UserProfile.ROLE_ADMIN)
+def suppliers_dashboard(request):
+    forms = {'supplier': SupplierForm(prefix='supplier')}
+    suppliers = Supplier.objects.all()
+
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+        if form_type == 'supplier':
+            forms['supplier'] = SupplierForm(request.POST, prefix='supplier')
+            if forms['supplier'].is_valid():
+                forms['supplier'].save()
+                messages.success(request, 'Supplier saved successfully.')
+                return redirect('restaurant:suppliers_dashboard')
+
+    context = dashboard_context('suppliers', request.user)
+    context.update({
+        'forms': forms,
+        'suppliers': suppliers,
+        'stats': [
+            {'label': 'Suppliers', 'value': suppliers.count()},
+            {'label': 'With phone', 'value': suppliers.exclude(phone='').count()},
+            {'label': 'With email', 'value': suppliers.exclude(email='').count()},
+            {'label': 'With notes', 'value': suppliers.exclude(notes='').count()},
+        ],
+    })
+    return render(request, 'restaurant/suppliers_dashboard.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_OWNER, UserProfile.ROLE_ADMIN)
+def purchase_dashboard(request):
+    form = PurchaseForm(prefix='purchase')
+    purchase_lines_json = '[]'
+    purchase_number_query = request.GET.get('purchase_number', '').strip()
+
+    if request.method == 'POST':
+        form = PurchaseForm(request.POST, prefix='purchase')
+        purchase_lines_json = request.POST.get('purchase_lines_json', '[]')
+        purchase_lines, line_errors = parse_purchase_lines(purchase_lines_json)
+        if form.is_valid() and not line_errors:
+            line_item_ids = {line['inventory_item_id'] for line in purchase_lines}
+            with transaction.atomic():
+                inventory_items = InventoryItem.objects.select_for_update().filter(id__in=line_item_ids)
+                inventory_by_id = {item.id: item for item in inventory_items}
+                if len(inventory_by_id) != len(line_item_ids):
+                    messages.error(request, 'One or more selected products no longer exist.')
+                else:
+                    purchase = form.save(commit=False)
+                    purchase.created_by = request.user
+                    purchase.save()
+                    for line in purchase_lines:
+                        inventory_item = inventory_by_id[line['inventory_item_id']]
+                        previous_quantity = inventory_item.quantity
+                        PurchaseItem.objects.create(
+                            purchase=purchase,
+                            inventory_item=inventory_item,
+                            quantity=line['quantity'],
+                            unit_cost=line['unit_cost'],
+                        )
+                        inventory_item.quantity += line['quantity']
+                        inventory_item.save(update_fields=['quantity'])
+                        InventoryHistory.objects.create(
+                            inventory_item=inventory_item,
+                            source=InventoryHistory.SOURCE_PURCHASE,
+                            quantity_change=line['quantity'],
+                            quantity_before=previous_quantity,
+                            quantity_after=inventory_item.quantity,
+                            reference=purchase.purchase_number or f'Purchase #{purchase.pk}',
+                            created_by=request.user,
+                        )
+                    messages.success(request, 'Purchase recorded and stock updated.')
+                    return redirect('restaurant:purchase_dashboard')
+        for error in line_errors:
+            messages.error(request, error)
+
+    purchases = Purchase.objects.select_related('supplier', 'created_by').prefetch_related('items__inventory_item')
+    if purchase_number_query:
+        purchases = purchases.filter(purchase_number__icontains=purchase_number_query)
+    context = dashboard_context('purchases', request.user)
+    context.update({
+        'form': form,
+        'purchase_lines_json': purchase_lines_json,
+        'purchase_number_query': purchase_number_query,
+        'purchases': purchases[:30],
+        'stats': [
+            {'label': 'Purchases', 'value': purchases.count()},
+            {'label': 'Products bought', 'value': PurchaseItem.objects.values('inventory_item').distinct().count()},
+            {'label': 'Spend total', 'value': sum(purchase.total_cost for purchase in purchases)},
+            {'label': 'Suppliers', 'value': Supplier.objects.count()},
+        ],
+    })
+    return render(request, 'restaurant/purchase_dashboard.html', context)
 
 
 @login_required

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, InventoryItem, MenuItem, Order, OrderItem, RecipeComponent, UserProfile
+from .models import DiningTable, InventoryHistory, InventoryItem, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
 
 
 @admin.register(UserProfile)
@@ -38,13 +38,40 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'table', 'waiter', 'customer_name', 'status', 'created_at')
-    list_filter = ('status', 'created_at')
+    list_display = ('id', 'table', 'waiter', 'customer_name', 'status', 'date')
+    list_filter = ('status', 'date')
     search_fields = ('customer_name', 'table__name', 'waiter__username')
     inlines = [OrderItemInline]
 
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'quantity', 'unit', 'reorder_level', 'needs_reorder')
-    search_fields = ('name',)
+    list_display = ('name', 'plu', 'price', 'quantity', 'unit', 'reorder_level', 'needs_reorder')
+    search_fields = ('name', 'plu')
+
+
+@admin.register(InventoryHistory)
+class InventoryHistoryAdmin(admin.ModelAdmin):
+    list_display = ('inventory_item', 'source', 'quantity_change', 'quantity_before', 'quantity_after', 'reference', 'created_by', 'date')
+    list_filter = ('source', 'date')
+    search_fields = ('inventory_item__name', 'barcode', 'reference')
+
+
+@admin.register(Supplier)
+class SupplierAdmin(admin.ModelAdmin):
+    list_display = ('name', 'contact_person', 'phone', 'email')
+    search_fields = ('name', 'contact_person', 'phone', 'email')
+
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    list_display = ('id', 'purchase_number', 'supplier', 'total_cost', 'created_by', 'date')
+    list_filter = ('supplier', 'date')
+    search_fields = ('purchase_number', 'supplier__name')
+
+
+@admin.register(PurchaseItem)
+class PurchaseItemAdmin(admin.ModelAdmin):
+    list_display = ('purchase', 'inventory_item', 'quantity', 'unit_cost')
+    list_filter = ('inventory_item',)
+    search_fields = ('purchase__supplier__name', 'inventory_item__name')

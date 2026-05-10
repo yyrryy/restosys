@@ -247,6 +247,17 @@ button {
     padding: 18px;
 }
 
+.metric-card-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.metric-card-link:hover {
+    border-color: var(--accent);
+    background: #f0fdfa;
+}
+
 .metric-card span,
 .metric-card small {
     color: var(--muted);
@@ -264,10 +275,81 @@ button {
     gap: 16px;
 }
 
+.split-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
 .waiter-layout {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
     gap: 16px;
+}
+
+.cashier-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    gap: 16px;
+}
+
+.cashier-details-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(480px, 92vw);
+    background: #ffffff;
+    border-right: 1px solid var(--line);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 70;
+    transform: translateX(-102%);
+    transition: transform 180ms ease;
+}
+
+.cashier-details-drawer.open {
+    transform: translateX(0);
+}
+
+.cashier-details-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    z-index: 60;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+}
+
+.cashier-details-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.cashier-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.bill-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.bill-button {
+    min-height: 56px;
+    font-size: 18px;
+}
+
+.bill-actions {
+    display: flex;
+    gap: 8px;
 }
 
 .order-panel {
@@ -438,6 +520,12 @@ button {
 
 .ghost-button {
     padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
 }
 
 .pos-grid {
@@ -627,6 +715,40 @@ th {
     font-weight: 700;
 }
 
+.purchase-builder {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.purchase-search-results {
+    display: grid;
+    gap: 6px;
+}
+
+.purchase-search-option {
+    text-align: left;
+    border: 1px solid var(--line);
+    background: #ffffff;
+    color: var(--ink);
+    padding: 9px 10px;
+}
+
+.purchase-selected {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.purchase-line-inputs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
 input,
 select {
     width: 100%;
@@ -658,6 +780,10 @@ input[type="checkbox"] {
 
 .action-cell button {
     padding: 8px 10px;
+}
+
+.row-selected {
+    background: #f0fdfa;
 }
 
 .status-ready {
@@ -710,6 +836,100 @@ input[type="checkbox"] {
     color: var(--muted);
 }
 
+.scanner-panel {
+    display: grid;
+    gap: 14px;
+}
+
+.scanner-help {
+    margin: 0;
+    color: var(--muted);
+}
+
+.scanner-status-row {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+}
+
+.scanner-ready-text {
+    margin: 0;
+    font-weight: 700;
+    color: var(--accent-dark);
+}
+
+.scanner-svg {
+    width: min(100%, 420px);
+    height: auto;
+    display: block;
+}
+
+.scanner-shell {
+    fill: #f8fafc;
+    stroke: #cbd5e1;
+    stroke-width: 2;
+}
+
+.barcode-bars rect {
+    fill: #0f172a;
+}
+
+.scanner-beam {
+    stroke: #14b8a6;
+    stroke-width: 3;
+    stroke-linecap: round;
+    animation: scanner-beam-move 1.4s ease-in-out infinite;
+}
+
+.scanner-checkmark {
+    opacity: 0;
+}
+
+.scanner-checkmark circle {
+    fill: #dcfce7;
+    stroke: #16a34a;
+    stroke-width: 2;
+}
+
+.scanner-checkmark path {
+    fill: none;
+    stroke: #16a34a;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 32;
+    stroke-dashoffset: 32;
+}
+
+.scan-complete .scanner-checkmark {
+    opacity: 1;
+}
+
+.scan-complete .scanner-checkmark path {
+    animation: scanner-check-draw 0.5s ease forwards;
+}
+
+@keyframes scanner-beam-move {
+    0% {
+        transform: translateY(-32px);
+        opacity: 0.2;
+    }
+    50% {
+        transform: translateY(32px);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-32px);
+        opacity: 0.2;
+    }
+}
+
+@keyframes scanner-check-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
 @media (max-width: 900px) {
     body {
         grid-template-columns: 1fr;
@@ -744,6 +964,8 @@ input[type="checkbox"] {
 
     .stats-grid,
     .content-grid,
+    .split-grid,
+    .cashier-layout,
     .three-grid,
     .feature-grid,
     .waiter-layout,
@@ -787,5 +1009,9 @@ input[type="checkbox"] {
 
     .pos-grid {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .purchase-line-inputs {
+        grid-template-columns: 1fr;
     }
 }

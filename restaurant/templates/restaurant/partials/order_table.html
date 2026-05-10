@@ -13,7 +13,7 @@
         {% for order in orders %}
             <tr>
                 <td>#{{ order.id }}</td>
-                <td>{{ order.table|default:"Takeaway" }}</td>
+                <td>{{ order.table|default:"Takeaway" }} ({{ order.waiter }})</td>
                 <td>
                     {% for item in order.items.all %}
                         {{ item.quantity }} x {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}
@@ -38,12 +38,13 @@
                     </td>
                 {% elif cashier_actions %}
                     <td class="action-cell">
-                        <button onclick="getorderdetails({{order.id}})">details</button>
-                        <form method="post" action="{% url 'restaurant:update_order_status' order.id 'paid' %}">
+                        <button type="button" class="ghost-button cashier-details-trigger" data-order-id="{{ order.id }}">Details</button>
+                        <!-- <form method="post" action="{% url 'restaurant:update_order_status' order.id 'paid' %}">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ next_url }}">
                             <button type="submit">Mark Paid</button>
-                        </form>
+
+                        </form> -->
                     </td>
                 {% elif show_actions %}
                     <td class="action-cell">

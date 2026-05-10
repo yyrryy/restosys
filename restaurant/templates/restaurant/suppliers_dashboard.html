@@ -1,0 +1,110 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Suppliers | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Supplier management</p>
+            <h1>Suppliers & purchases</h1>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+        <article class="metric-card">
+            <span>{{ stat.label }}</span>
+            <strong>{{ stat.value }}</strong>
+        </article>
+    </section>
+
+    <section class="content-grid">
+        <article class="panel">
+            <div class="panel-heading"><h2>Add supplier</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="supplier">
+                {{ forms.supplier.as_p }}
+                <button type="submit">Save Supplier</button>
+            </form>
+        </article>
+
+        <article class="panel">
+            <a class="feature-link" href="{% url 'restaurant:suppliers_dashboard' %}">
+                <strong>+ BON ACHAT</strong>
+                <supplier>
+                    enregstrer un bon achat du fournisseur
+                </supplier>
+            </a>
+            <!-- <div class="panel-heading"><h2>Record purchase</h2></div>
+            <form class="stack-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="purchase">
+                {{ forms.purchase.as_p }}
+                {{ purchase_items_formset.management_form }}
+                {% if purchase_items_formset.non_form_errors %}
+                    <ul class="alerts">
+                        {% for error in purchase_items_formset.non_form_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% for line_form in purchase_items_formset %}
+                    <div class="panel spacing-top">
+                        {{ line_form.as_p }}
+                    </div>
+                {% endfor %}
+                <button type="submit">Save Purchase</button>
+            </form> -->
+        </article>
+    </section>
+
+    <section class="content-grid spacing-top">
+        <article class="panel">
+            <div class="panel-heading"><h2>Suppliers</h2></div>
+            <table>
+                <thead><tr><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th></tr></thead>
+                <tbody>
+                    {% for supplier in suppliers %}
+                        <tr>
+                            <td>{{ supplier.name }}</td>
+                            <td>{{ supplier.contact_person|default:"-" }}</td>
+                            <td>{{ supplier.phone|default:"-" }}</td>
+                            <td>{{ supplier.email|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">No suppliers yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+
+        <article class="panel">
+            <div class="panel-heading"><h2>Recent purchases</h2></div>
+            <table>
+                <thead><tr><th>Supplier</th><th>Items</th><th>Total</th><th>By</th></tr></thead>
+                <tbody>
+                    {% for purchase in purchases %}
+                        <tr>
+                            <td>{{ purchase.supplier.name }}</td>
+                            <td>
+                                {% for item in purchase.items.all %}
+                                    {{ item.inventory_item.name }} ({{ item.quantity }} {{ item.inventory_item.unit }} @ {{ item.unit_cost }}){% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ purchase.total_cost }}</td>
+                            <td>{{ purchase.created_by.username|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4">No purchases yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </article>
+    </section>
+{% endblock %}

@@ -18,9 +18,11 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
+from restaurant import views as restaurant_views
 
 urlpatterns = [
     path('', include('restaurant.urls')),
+    path('inventory/<int:item_id>/history/', restaurant_views.inventory_item_history, name='inventory_item_history'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
 ]

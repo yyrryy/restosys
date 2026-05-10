@@ -33,6 +33,7 @@
                     <th>Reorder level</th>
                     <th>Status</th>
                     <th>Used in dishes</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -56,10 +57,13 @@
                                 Not used yet
                             {% endfor %}
                         </td>
+                        <td class="action-cell">
+                            <a class="ghost-button" href="{% url 'restaurant:inventory_item_history' item.id %}">History</a>
+                        </td>
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6">No stock products yet. Add products from the admin dashboard.</td>
+                        <td colspan="7">No stock products yet. Add products from the admin dashboard.</td>
                     </tr>
                 {% endfor %}
             </tbody>

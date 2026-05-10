@@ -1,0 +1,85 @@
+{% extends 'restaurant/base.html' %}
+{% load static %}
+
+{% block title %}Barcode Scanner | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Cashier station</p>
+            <h1>Barcode scanner</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Back to Cashier</a>
+    </header>
+
+    <section class="panel scanner-panel {% if barcode_result %}scan-complete{% endif %}">
+        <div class="panel-heading">
+            <h2>Scale scanner input</h2>
+        </div>
+        <p class="scanner-help">Scanner is listening. Scan a barcode now.</p>
+        <div class="scanner-status-row">
+            <svg class="scanner-svg" viewBox="0 0 340 140" role="img" aria-label="Scanner ready animation">
+                <rect x="10" y="10" width="320" height="120" rx="10" class="scanner-shell"></rect>
+                <g class="barcode-bars">
+                    <rect x="38" y="36" width="6" height="68"></rect>
+                    <rect x="50" y="30" width="4" height="74"></rect>
+                    <rect x="59" y="38" width="8" height="66"></rect>
+                    <rect x="73" y="34" width="3" height="70"></rect>
+                    <rect x="81" y="28" width="7" height="76"></rect>
+                    <rect x="93" y="36" width="5" height="68"></rect>
+                    <rect x="102" y="30" width="4" height="74"></rect>
+                    <rect x="112" y="38" width="7" height="66"></rect>
+                    <rect x="125" y="34" width="3" height="70"></rect>
+                    <rect x="133" y="28" width="8" height="76"></rect>
+                    <rect x="146" y="36" width="4" height="68"></rect>
+                    <rect x="154" y="30" width="5" height="74"></rect>
+                    <rect x="164" y="38" width="7" height="66"></rect>
+                    <rect x="177" y="34" width="4" height="70"></rect>
+                    <rect x="186" y="28" width="6" height="76"></rect>
+                    <rect x="198" y="36" width="4" height="68"></rect>
+                    <rect x="206" y="30" width="5" height="74"></rect>
+                    <rect x="216" y="38" width="8" height="66"></rect>
+                    <rect x="230" y="34" width="3" height="70"></rect>
+                    <rect x="238" y="28" width="7" height="76"></rect>
+                    <rect x="250" y="36" width="6" height="68"></rect>
+                    <rect x="261" y="30" width="4" height="74"></rect>
+                    <rect x="270" y="38" width="7" height="66"></rect>
+                    <rect x="283" y="34" width="4" height="70"></rect>
+                    <rect x="292" y="28" width="8" height="76"></rect>
+                </g>
+                <line x1="24" y1="70" x2="316" y2="70" class="scanner-beam"></line>
+                <g class="scanner-checkmark">
+                    <circle cx="294" cy="46" r="20"></circle>
+                    <path d="M284 46l7 7 13-14"></path>
+                </g>
+            </svg>
+            <p class="scanner-ready-text" id="scanner-ready-text">
+                {% if barcode_result %}Scan complete{% else %}Ready to scan{% endif %}
+            </p>
+        </div>
+
+        <form class="stack-form" method="post" id="barcode-scan-form" autocomplete="off">
+            {% csrf_token %}
+            <input id="barcode-input" name="barcode" type="hidden" value="{{ barcode_input }}">
+            <p class="purchase-selected"><strong>Hands-free mode:</strong> no click or focus required.</p>
+        </form>
+
+        {% if barcode_result %}
+            <div class="purchase-builder spacing-top">
+                <p class="purchase-selected"><strong>Product:</strong> {{ barcode_result.product.name }}</p>
+                <p class="purchase-selected"><strong>Prefix:</strong> {{ barcode_result.prefix }}</p>
+                <p class="purchase-selected"><strong>PLU:</strong> {{ barcode_result.plu }}</p>
+                <p class="purchase-selected"><strong>Price from barcode:</strong> {{ barcode_result.price|floatformat:2 }}</p>
+                <p class="purchase-selected"><strong>Price per kg:</strong> {{ barcode_result.product.price_per_kg|floatformat:2 }}</p>
+                <p class="purchase-selected"><strong>Weight:</strong> {{ barcode_result.weight|floatformat:3 }} kg</p>
+                <p class="purchase-selected"><strong>Deducted quantity:</strong> {{ barcode_result.deducted_quantity|floatformat:3 }} {{ barcode_result.product.unit }}</p>
+                <p class="purchase-selected"><strong>Stock before:</strong> {{ barcode_result.previous_quantity|floatformat:3 }} {{ barcode_result.product.unit }}</p>
+                <p class="purchase-selected"><strong>Stock after:</strong> {{ barcode_result.remaining_quantity|floatformat:3 }} {{ barcode_result.product.unit }}</p>
+            </div>
+        {% endif %}
+    </section>
+
+{% endblock %}
+{% block js%}
+    <script src="{% static 'restaurant/js/barcode-scanner.js' %}"></script>
+{% endblock %}
