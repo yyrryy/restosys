@@ -140,7 +140,9 @@ class AdminUserCreateForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = get_user_model()
         fields = ['username', 'first_name', 'last_name', 'email', 'role', 'password1', 'password2']
-
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].widget.attrs.pop('autofocus', None)
     def save(self, commit=True):
         user = super().save(commit=commit)
         UserProfile.objects.update_or_create(user=user, defaults={'role': self.cleaned_data['role']})
