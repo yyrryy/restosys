@@ -18,14 +18,20 @@ PORT = 80
 
 
 def runserver():
-    os.system(f'python -m waitress --listen={HOST}:{PORT} restosys.wsgi:application')
+    from restosys.settings import usesqlite
+
+    if usesqlite:
+        os.system(f'python manage.py runserver {HOST}:{PORT}')
+    else:
+        os.system('python manage.py collectstatic --noinput')
+        os.system(f'python -m waitress --listen={HOST}:{PORT} restosys.wsgi:application')
 
 
 if __name__ == '__main__':
     runserver()
     sleep(2)  # Wait a moment to ensure the server is up
     # open edge after the server is up, edge not chrome
-    
+
 
 
 # def lunchchrome():

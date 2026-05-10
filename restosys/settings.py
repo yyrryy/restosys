@@ -22,9 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-8@k)mv5*d+$c@^wh5(h&6*pyh)^cjf($)k9-2#&7n(w+4-(-oc'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver', "*"]
 
 
@@ -74,7 +71,10 @@ WSGI_APPLICATION = 'restosys.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-usesqlite = os.getenv('DEBUG')=='True' or os.getenv('HOME')=='/home/aaliali'
+USE_SQLITE = os.getenv('DEBUG') == 'True' or os.getenv('HOME') == '/home/aaliali'
+usesqlite = USE_SQLITE
+# SQLite mode is treated as local/dev mode (runserver). Non-sqlite is waitress mode.
+DEBUG = USE_SQLITE
 print('usesqlite', usesqlite)
 if usesqlite:
     DATABASES = {
@@ -130,9 +130,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-MEDIA_URL = 'media/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
