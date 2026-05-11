@@ -255,8 +255,8 @@ class CashDeskEntry(models.Model):
     TYPE_IN = 'in'
     TYPE_OUT = 'out'
     TYPE_CHOICES = [
-        (TYPE_IN, 'Cash In'),
-        (TYPE_OUT, 'Cash Out'),
+        (TYPE_IN, 'Entrée'),
+        (TYPE_OUT, 'Sortie'),
     ]
 
     entry_type = models.CharField(max_length=3, choices=TYPE_CHOICES)

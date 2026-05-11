@@ -53,14 +53,14 @@
         receivedEl.textContent = formatMoney(cashReceived);
         changeResult.textContent = formatMoney(change);
         if (cashReceived === 0) {
-            changeNote.textContent = 'Tap bills to calculate change.';
+            changeNote.textContent = 'Touchez les billets pour calculer la monnaie.';
             return;
         }
         if (change < 0) {
-            changeNote.textContent = `Missing ${formatMoney(Math.abs(change))} to complete payment.`;
+            changeNote.textContent = `Il manque ${formatMoney(Math.abs(change))} pour finaliser le paiement.`;
             return;
         }
-        //changeNote.textContent = `Rond ${formatMoney(change)} back to the customer.`;
+        changeNote.textContent = `Rendez ${formatMoney(change)} au client.`;
     }
 
     function resetCalculator() {
@@ -71,7 +71,7 @@
 
     function buildItems(items) {
         if (!items.length) {
-            itemsBody.innerHTML = '<tr><td colspan="4">No items found.</td></tr>';
+            itemsBody.innerHTML = '<tr><td colspan="4">Aucun article trouvé.</td></tr>';
             return;
         }
         itemsBody.innerHTML = '';
@@ -102,7 +102,7 @@
         fetch(detailsUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (response) {
                 if (!response.ok) {
-                    throw new Error('Failed to fetch order details.');
+                    throw new Error('Échec du chargement des détails de commande.');
                 }
                 return response.json();
             })
@@ -122,7 +122,7 @@
 
             })
             .catch(function () {
-                changeNote.textContent = 'Failed to load order details.';
+                changeNote.textContent = 'Échec du chargement des détails de commande.';
                 openDrawer();
             });
     }
@@ -132,7 +132,7 @@
         fetch(detailsUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (response) {
                 if (!response.ok) {
-                    throw new Error('Failed to fetch table payment details.');
+                    throw new Error('Échec du chargement des détails de paiement table.');
                 }
                 return response.json();
             })
@@ -151,7 +151,7 @@
                 openDrawer();
             })
             .catch(function () {
-                changeNote.textContent = 'Failed to load table payment details.';
+                changeNote.textContent = 'Échec du chargement des détails de paiement table.';
                 openDrawer();
             });
     }

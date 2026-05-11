@@ -457,10 +457,10 @@ def cashier_dashboard(request):
     context = dashboard_context('cashier', request.user)
     context.update({
         'stats': [
-            {'label': 'Awaiting payment', 'value': payable_orders.count()},
-            {'label': 'Paid orders', 'value': Order.objects.filter(status=Order.STATUS_PAID).count()},
-            {'label': 'Open tables', 'value': DiningTable.objects.exclude(status=DiningTable.STATUS_AVAILABLE).count()},
-            {'label': 'Cash collected', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'},
+            {'label': 'Payment en attend', 'value': payable_orders.count()},
+            {'label': 'Payés', 'value': Order.objects.filter(status=Order.STATUS_PAID).count()},
+            {'label': 'Tables ouvertes', 'value': DiningTable.objects.exclude(status=DiningTable.STATUS_AVAILABLE).count()},
+            {'label': 'Argent collecté', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'},
         ],
         'payable_orders': payable_orders,
         'paid_orders': paid_orders,
@@ -474,9 +474,9 @@ def parse_discount_input(discount_raw):
         try:
             discount_amount = float(discount_raw)
         except ValueError:
-            return None, 'Invalid discount amount.'
+            return None, 'Montant de remise invalide.'
     if discount_amount < 0:
-        return None, 'Discount amount cannot be negative.'
+        return None, 'Le montant de remise ne peut pas être négatif.'
     return discount_amount, None
 
 
@@ -499,6 +499,17 @@ def apply_discount_to_orders(orders, discount_amount):
             order_discount = min(order.total, proportional_share, remaining_discount)
         order.discount_amount = max(order_discount, 0)
         remaining_discount -= order.discount_amount
+
+
+def record_order_payment_entry(user, amount, reason):
+    if amount <= 0:
+        return
+    CashDeskEntry.objects.create(
+        entry_type=CashDeskEntry.TYPE_IN,
+        amount=amount,
+        reason=reason,
+        created_by=user,
+    )
 
 
 @login_required
@@ -541,7 +552,7 @@ def cashier_table_details(request, table_id):
         .order_by('date')
     )
     if not orders:
-        return JsonResponse({'detail': 'No payable orders found for this table.'}, status=404)
+        return JsonResponse({'detail': 'Aucune commande à payer pour cette table.'}, status=404)
 
     items = []
     for order in orders:
@@ -581,7 +592,7 @@ def pay_table_orders(request, table_id):
         .order_by('date')
     )
     if not orders:
-        messages.error(request, 'No payable orders found for this table.')
+        messages.error(request, 'Aucune commande à payer pour cette table.')
         return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
 
     discount_raw = request.POST.get('discount_amount', '').strip()
@@ -591,17 +602,25 @@ def pay_table_orders(request, table_id):
         return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
 
     apply_discount_to_orders(orders, discount_amount)
+    collected_total = sum(order.payable_total for order in orders)
+    order_refs = ', '.join(f'#{order.id}' for order in orders)
     with transaction.atomic():
         for order in orders:
             order.status = Order.STATUS_PAID
             order.save(update_fields=['status', 'discount_amount'])
+
+        record_order_payment_entry(
+            request.user,
+            collected_total,
+            f'Paiement table {table} - Commandes {order_refs}',
+        )
 
         has_unpaid_orders = Order.objects.filter(table=table).exclude(status=Order.STATUS_PAID).exists()
         if not has_unpaid_orders:
             table.status = DiningTable.STATUS_AVAILABLE
             table.save(update_fields=['status'])
 
-    messages.success(request, f'Table {table} payment recorded for {len(orders)} order(s).')
+    messages.success(request, f'Paiement de la table {table} enregistré pour {len(orders)} commande(s).')
     return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
 
 
@@ -615,23 +634,34 @@ def cash_desk_dashboard(request):
             entry = form.save(commit=False)
             entry.created_by = request.user
             entry.save()
-            messages.success(request, f'{entry.get_entry_type_display()} entry saved.')
+            messages.success(request, f'Entrée {entry.get_entry_type_display().lower()} enregistrée.')
             return redirect('restaurant:cash_desk_dashboard')
 
     entries = CashDeskEntry.objects.select_related('created_by')
-    in_total = entries.filter(entry_type=CashDeskEntry.TYPE_IN).aggregate(total=Sum('amount'))['total'] or 0.0
+    order_in_total = (
+        entries.filter(entry_type=CashDeskEntry.TYPE_IN, reason__startswith='Paiement ')
+        .aggregate(total=Sum('amount'))['total'] or 0.0
+    )
+    manual_in_total = (
+        entries.filter(entry_type=CashDeskEntry.TYPE_IN)
+        .exclude(reason__startswith='Paiement ')
+        .aggregate(total=Sum('amount'))['total'] or 0.0
+    )
     out_total = entries.filter(entry_type=CashDeskEntry.TYPE_OUT).aggregate(total=Sum('amount'))['total'] or 0.0
     paid_orders = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items')
-    order_cash_total = sum(order.payable_total for order in paid_orders)
+    paid_order_total = sum(order.payable_total for order in paid_orders)
+    order_cash_total = max(order_in_total, paid_order_total)
     context = dashboard_context('cashier', request.user)
+    cash_collected_from_orders = Order.objects.filter(status=Order.STATUS_PAID)
     context.update({
         'form': form,
         'entries': entries[:100],
+        "cash_collected_from_orders": cash_collected_from_orders,
         'stats': [
-            {'label': 'Order cash collected', 'value': order_cash_total},
-            {'label': 'Cash in', 'value': in_total},
-            {'label': 'Cash out', 'value': out_total},
-            {'label': 'Net cash desk', 'value': in_total - out_total},
+            {'label': 'Espèces encaissées commandes', 'value': order_cash_total},
+            {'label': 'Entrées de caisse', 'value': manual_in_total},
+            {'label': 'Sorties de caisse', 'value': out_total},
+            {'label': 'Net caisse', 'value': order_cash_total + manual_in_total - out_total},
         ],
     })
     return render(request, 'restaurant/cash_desk_dashboard.html', context)
@@ -918,7 +948,7 @@ def update_order_status(request, order_id, status):
             messages.error(request, 'Only waiter accounts can close table service orders.')
             return redirect(request.POST.get('next') or 'restaurant:dashboard')
         if status in cashier_status and role not in {UserProfile.ROLE_CASHIER, UserProfile.ROLE_OWNER}:
-            messages.error(request, 'Only cashier accounts can mark orders as paid.')
+            messages.error(request, 'Seuls les comptes caisse peuvent marquer une commande comme payée.')
             return redirect(request.POST.get('next') or 'restaurant:dashboard')
         if status == Order.STATUS_READY and order.status != Order.STATUS_PREPARING:
             success, stock_message = deduct_order_stock(order)
@@ -926,6 +956,7 @@ def update_order_status(request, order_id, status):
                 messages.error(request, stock_message)
                 return redirect(request.POST.get('next') or 'restaurant:dashboard')
             
+        was_paid = order.status == Order.STATUS_PAID
         if status == Order.STATUS_PAID:
             discount_raw = request.POST.get('discount_amount', '').strip()
             discount_amount, discount_error = parse_discount_input(discount_raw)
@@ -939,6 +970,12 @@ def update_order_status(request, order_id, status):
             order.save(update_fields=['status', 'discount_amount'])
         else:
             order.save(update_fields=['status'])
+        if status == Order.STATUS_PAID and not was_paid:
+            record_order_payment_entry(
+                request.user,
+                order.payable_total,
+                f'Paiement commande #{order.pk}',
+            )
         if status == Order.STATUS_PAID and order.table:
             has_unpaid_orders = (
                 Order.objects.filter(table=order.table)

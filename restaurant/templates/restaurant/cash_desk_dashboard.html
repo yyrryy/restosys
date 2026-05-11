@@ -1,14 +1,14 @@
 {% extends 'restaurant/base.html' %}
 
-{% block title %}Cash Desk | RestoSys{% endblock %}
+{% block title %}Caisse | RestoSys{% endblock %}
 
 {% block content %}
     <header class="topbar">
         <div>
-            <p class="eyebrow">Cashier station</p>
-            <h1>Cash desk</h1>
+            <p class="eyebrow">Poste caisse</p>
+            <h1>Caisse</h1>
         </div>
-        <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Back to Cashier</a>
+        <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Retour à la caisse</a>
     </header>
 
     <section class="stats-grid">
@@ -22,30 +22,39 @@
 
     <section class="panel">
         <div class="panel-heading">
-            <h2>Cash in / cash out</h2>
+            <h2>Entrées / sorties de caisse</h2>
         </div>
         <form class="stack-form" method="post">
             {% csrf_token %}
             {{ form }}
-            <button type="submit">Save entry</button>
+            <button type="submit">Enregistrer</button>
         </form>
     </section>
 
     <section class="panel spacing-top">
         <div class="panel-heading">
-            <h2>Cash desk history</h2>
+            <h2>Historique de caisse</h2>
         </div>
         <table>
             <thead>
                 <tr>
                     <th>Date</th>
                     <th>Type</th>
-                    <th>Amount</th>
-                    <th>Reason</th>
-                    <th>User</th>
+                    <th>Montant</th>
+                    <th>Motif</th>
+                    <th>Utilisateur</th>
                 </tr>
             </thead>
             <tbody>
+                {% for i in cash_collected_from_orders %}
+                <tr>
+                    <td>{{ i.date|date:"Y-m-d H:i" }}</td>
+                    <td><span class="status status-ready">Encaissement</span></td>
+                    <td>{{ i.payable_total|floatformat:"2" }}</td>
+                    <td>Encaissement d'une commande</td>
+                    <td>{% if i.created_by %}{{ i.created_by.username }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
                 {% for entry in entries %}
                     <tr>
                         <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
@@ -60,7 +69,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5">No cash desk entries yet.</td>
+                        <td colspan="5">Aucun mouvement de caisse pour le moment.</td>
                     </tr>
                 {% endfor %}
             </tbody>

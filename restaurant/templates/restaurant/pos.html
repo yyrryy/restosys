@@ -9,9 +9,9 @@
             <h1>POS</h1>
         </div>
         {% if is_cashier_mode %}
-            <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Back to Cashier</a>
+            <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Retour au caisse</a>
         {% else %}
-            <a class="button-link" href="{% url 'restaurant:waiter_dashboard' %}">Back to Waiter</a>
+            <a class="button-link" href="{% url 'restaurant:waiter_dashboard' %}">Retour au serveur</a>
         {% endif %}
     </header>
 
