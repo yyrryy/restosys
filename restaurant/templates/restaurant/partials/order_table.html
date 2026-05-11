@@ -14,11 +14,11 @@
             <tr>
                 <td>#{{ order.id }}</td>
                 <td>{{ order.table|default:"À emporter" }} ({{ order.waiter }})</td>
-                <!-- <td>
+                <td>
                     {% for item in order.items.all %}
                         {{ item.quantity }} x {{ item.menu_item.name }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
-                </td> -->
+                </td>
                 <td><span class="status status-{{ order.status }}">{{ order.get_status_display }}</span></td>
                 <td>{% if use_payable_total %}{{ order.payable_total|floatformat:2 }}{% else %}{{ order.total|floatformat:2 }}{% endif %}</td>
                 {% if kitchen_actions %}
