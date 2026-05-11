@@ -16,6 +16,7 @@ from .forms import (
     CashDeskEntryForm,
     DiningTableForm,
     AdminUserCreateForm,
+    InventoryItemInfoForm,
     InventoryItemForm,
     MenuCategoryForm,
     MenuItemForm,
@@ -251,6 +252,14 @@ def inventory_dashboard(request):
 @role_required(UserProfile.ROLE_ADMIN)
 def inventory_item_history(request, item_id):
     inventory_item = get_object_or_404(InventoryItem, pk=item_id)
+    item_form = InventoryItemInfoForm(instance=inventory_item, prefix='item')
+    if request.method == 'POST':
+        item_form = InventoryItemInfoForm(request.POST, instance=inventory_item, prefix='item')
+        if item_form.is_valid():
+            item_form.save()
+            messages.success(request, f'{inventory_item.name} updated successfully.')
+            return redirect('restaurant:inventory_item_history', item_id=inventory_item.id)
+
     out_from_scal = Scalbarcodescan.objects.filter(inventory_item=inventory_item)
     out_from_orders = OrderItem.objects.filter(menu_item__components__inventory_item=inventory_item, order__status=Order.STATUS_SERVED)
     in_from_purchases = PurchaseItem.objects.filter(inventory_item=inventory_item)
@@ -263,6 +272,7 @@ def inventory_item_history(request, item_id):
     #     )
     context = {
         'inventory_item': inventory_item,
+        'item_form': item_form,
         'outs': outs,
         'history_ins': in_from_purchases
     }

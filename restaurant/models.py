@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-
+from django.utils import timezone
 
 class UserProfile(models.Model):
     ROLE_OWNER = 'owner'
@@ -238,7 +238,8 @@ class PurchaseItem(models.Model):
     quantity = models.FloatField(default=0, null=True, blank=True)
     unit_cost = models.FloatField(default=0, null=True, blank=True)
     total = models.FloatField(default=0, null=True, blank=True)
-
+    # add date field to track when the purchase item was added, for better inventory history tracking, default is now
+    date = models.DateTimeField(default=timezone.now)
     class Meta:
         ordering = ['inventory_item__name']
 

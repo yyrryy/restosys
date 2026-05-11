@@ -40,7 +40,7 @@
                 {% for item in inventory_items %}
                     <tr>
                         <td>{{ item.name }}</td>
-                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.quantity|floatformat:2 }}</td>
                         <td>{{ item.unit }}</td>
                         <td>{{ item.reorder_level }}</td>
                         <td>

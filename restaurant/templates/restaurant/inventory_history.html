@@ -11,6 +11,17 @@
         <a class="button-link" href="{% url 'restaurant:inventory_dashboard' %}">Back to Inventory</a>
     </header>
 
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Update item info</h2>
+        </div>
+        <form class="stack-form" method="post">
+            {% csrf_token %}
+            {{ item_form.as_p }}
+            <button type="submit">Save changes</button>
+        </form>
+    </section>
+
     <section class="split-grid">
         <article class="panel">
             <div class="panel-heading">
@@ -30,8 +41,8 @@
                         <tr>
                             <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
                             <td><span class="status status-ready">+{{ entry.quantity }}</span></td>
-                            <td>{{ entry.source }}</td>
-                            <td>{{ entry.reference }}</td>
+                            <td>{{ entry.purchase.supplier.name }}</td>
+                            <td>{{ entry.purchase.purchase_number }}</td>
                         </tr>
                     {% empty %}
                         <tr>
