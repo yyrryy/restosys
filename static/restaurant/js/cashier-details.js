@@ -5,6 +5,7 @@
     const orderIdEl = document.getElementById('drawer-order-id');
     const tableEl = document.getElementById('drawer-order-table');
     const statusEl = document.getElementById('drawer-order-status');
+    const subtotalEl = document.getElementById('drawer-order-subtotal');
     const totalEl = document.getElementById('drawer-order-total');
     const itemsBody = document.getElementById('drawer-items-body');
     const receivedEl = document.getElementById('drawer-cash-received');
@@ -14,12 +15,17 @@
     const undoButton = document.getElementById('bill-undo');
     const resetButton = document.getElementById('bill-reset');
     const detailsButtons = document.querySelectorAll('.cashier-details-trigger');
-    const urlTemplate = window.cashierDetailsUrlTemplate;
+    const orderDetailsUrlTemplate = window.cashierOrderDetailsUrlTemplate;
+    const tableDetailsUrlTemplate = window.cashierTableDetailsUrlTemplate;
+    const orderPayUrlTemplate = window.cashierOrderPayUrlTemplate;
+    const tablePayUrlTemplate = window.cashierTablePayUrlTemplate;
     const paimentForm = document.querySelector('.paiment-form');
+    const discountInput = document.getElementById('drawer-discount-input');
     if (
-        !drawer || !overlay || !cancelButton || !orderIdEl || !tableEl || !statusEl || !totalEl ||
+        !drawer || !overlay || !cancelButton || !orderIdEl || !tableEl || !statusEl || !subtotalEl || !totalEl ||
         !itemsBody || !receivedEl || !changeResult || !changeNote || !billGrid ||
-        !undoButton || !resetButton || !detailsButtons.length || !urlTemplate
+        !undoButton || !resetButton || !detailsButtons.length || !orderDetailsUrlTemplate ||
+        !tableDetailsUrlTemplate || !orderPayUrlTemplate || !tablePayUrlTemplate || !discountInput
     ) {
         return;
     }
@@ -30,6 +36,16 @@
 
     function formatMoney(value) {
         return Number(value || 0).toFixed(2);
+    }
+
+    function updateDiscountDisplay() {
+        const subtotal = Number(subtotalEl.dataset.value || 0);
+        const parsedValue = Number(discountInput.value);
+        const rawValue = Number.isFinite(parsedValue) ? parsedValue : 0;
+        const discountAmount = Math.max(0, Math.min(rawValue, subtotal));
+        orderTotal = subtotal - discountAmount;
+        totalEl.textContent = formatMoney(orderTotal);
+        renderChange();
     }
 
     function renderChange() {
@@ -44,7 +60,7 @@
             changeNote.textContent = `Missing ${formatMoney(Math.abs(change))} to complete payment.`;
             return;
         }
-        changeNote.textContent = `Give ${formatMoney(change)} back to the customer.`;
+        //changeNote.textContent = `Rond ${formatMoney(change)} back to the customer.`;
     }
 
     function resetCalculator() {
@@ -82,7 +98,7 @@
     }
 
     function fetchDetails(orderId) {
-        const detailsUrl = urlTemplate.replace('/0/details/', `/${orderId}/details/`);
+        const detailsUrl = orderDetailsUrlTemplate.replace('/0/', `/${orderId}/`);
         fetch(detailsUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (response) {
                 if (!response.ok) {
@@ -91,15 +107,17 @@
                 return response.json();
             })
             .then(function (data) {
-                orderIdEl.textContent = `#${data.id}`;
+                orderIdEl.textContent = data.order_label || `#${data.id}`;
                 tableEl.textContent = data.table;
                 statusEl.textContent = data.status;
-                orderTotal = Number(data.total || 0);
-                paimentForm.action = "/orders/" + data.id + "/paid/";
-                
-                totalEl.textContent = formatMoney(orderTotal);
+                const subtotal = Number(data.subtotal || 0);
+                subtotalEl.dataset.value = String(subtotal);
+                subtotalEl.textContent = formatMoney(subtotal);
+                discountInput.value = formatMoney(Number(data.discount_amount || 0));
+                paimentForm.action = orderPayUrlTemplate.replace('/0/', `/${data.id}/`);
                 buildItems(data.items || []);
                 resetCalculator();
+                updateDiscountDisplay();
                 openDrawer();
 
             })
@@ -109,8 +127,42 @@
             });
     }
 
+    function fetchTableDetails(tableId) {
+        const detailsUrl = tableDetailsUrlTemplate.replace('/0/', `/${tableId}/`);
+        fetch(detailsUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch table payment details.');
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                orderIdEl.textContent = data.order_label || '-';
+                tableEl.textContent = data.table;
+                statusEl.textContent = data.status;
+                const subtotal = Number(data.subtotal || 0);
+                subtotalEl.dataset.value = String(subtotal);
+                subtotalEl.textContent = formatMoney(subtotal);
+                discountInput.value = formatMoney(Number(data.discount_amount || 0));
+                paimentForm.action = tablePayUrlTemplate.replace('/0/', `/${data.id}/`);
+                buildItems(data.items || []);
+                resetCalculator();
+                updateDiscountDisplay();
+                openDrawer();
+            })
+            .catch(function () {
+                changeNote.textContent = 'Failed to load table payment details.';
+                openDrawer();
+            });
+    }
+
     detailsButtons.forEach(function (button) {
         button.addEventListener('click', function () {
+            const tableId = button.dataset.tableId;
+            if (tableId) {
+                fetchTableDetails(tableId);
+                return;
+            }
             fetchDetails(button.dataset.orderId);
         });
     });
@@ -138,6 +190,7 @@
     });
 
     resetButton.addEventListener('click', resetCalculator);
+    discountInput.addEventListener('input', updateDiscountDisplay);
     cancelButton.addEventListener('click', closeDrawer);
     overlay.addEventListener('click', closeDrawer);
     renderChange();

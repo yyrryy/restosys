@@ -32,26 +32,25 @@
         <div class="panel-heading">
             <h2>Ready to pay</h2>
         </div>
-        {% include 'restaurant/partials/order_table.html' with orders=payable_orders cashier_actions=True next_url=request.path %}
+        {% include 'restaurant/partials/order_table.html' with orders=payable_orders cashier_actions=True next_url=request.path use_payable_total=True %}
     </section>
 
     <section class="panel spacing-top">
         <div class="panel-heading">
             <h2>Recent paid orders</h2>
         </div>
-        {% include 'restaurant/partials/order_table.html' with orders=paid_orders %}
+        {% include 'restaurant/partials/order_table.html' with orders=paid_orders use_payable_total=True %}
     </section>
 
     <div id="cashier-details-overlay" class="cashier-details-overlay"></div>
     <aside id="cashier-details-drawer" class="cashier-details-drawer">
         <div class="cashier-drawer-head">
-            <h2>Order details</h2>
+            <h2>Payment details</h2>
             <button type="button" id="cashier-drawer-cancel" class="ghost-button">Cancel</button>
         </div>
-        <p class="purchase-selected"><strong>Order:</strong> <span id="drawer-order-id">-</span></p>
+        <p class="purchase-selected"><strong>Orders:</strong> <span id="drawer-order-id">-</span></p>
         <p class="purchase-selected"><strong>Table:</strong> <span id="drawer-order-table">-</span></p>
         <p class="purchase-selected"><strong>Status:</strong> <span id="drawer-order-status">-</span></p>
-        <p class="purchase-selected"><strong>Total:</strong> <span id="drawer-order-total">0.00</span></p>
 
         <table class="spacing-top">
             <thead>
@@ -69,30 +68,37 @@
             </tbody>
         </table>
 
-        <div class="purchase-builder spacing-top">
-            <h3>Change calculator</h3>
-            <p class="purchase-selected"><strong>Cash received:</strong> <span id="drawer-cash-received">0.00</span></p>
-            <div class="bill-grid" id="bill-grid">
-                <button type="button" class="bill-button" data-value="5">5</button>
-                <button type="button" class="bill-button" data-value="10">10</button>
-                <button type="button" class="bill-button" data-value="20">20</button>
-                <button type="button" class="bill-button" data-value="50">50</button>
-                <button type="button" class="bill-button" data-value="100">100</button>
-                <button type="button" class="bill-button" data-value="200">200</button>
-                <button type="button" class="bill-button" data-value="500">500</button>
-                <button type="button" class="bill-button" data-value="1000">1000</button>
-            </div>
-            <div class="bill-actions">
-                <button type="button" id="bill-undo" class="ghost-button">Undo last</button>
-                <button type="button" id="bill-reset" class="ghost-button">Reset</button>
-            </div>
-            <p class="purchase-selected"><strong>Change:</strong> <span id="drawer-change-result">0.00</span></p>
-            <p class="purchase-selected" id="drawer-change-note">Tap bills to calculate change.</p>
-        </div>
         <form method="post" class="paiment-form">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next_url }}">
-            <button type="submit">Mark Paid</button>
+            <div style="background: #f8fafc; padding: 10px; margin-top: 5px; border-radius: 5px;">
+
+                <p class="purchase-selected" style="padding: 5px;"><strong>Total avant la remise:</strong> <strong id="drawer-order-subtotal" style="color: green; font-size: 20px;">0.00</strong>DH</p>
+                <strong for="drawer-discount-input">REMISE</strong>
+                <input id="drawer-discount-input" type="number" name="discount_amount" min="0" step="0.01" value="0">
+                <p class="purchase-selected" style="padding: 5px"><strong>Total apres la remise:</strong> <strong id="drawer-order-total" style="color: green; font-size: 20px;">0.00</strong>DH</p>
+            </div>
+            <div class="purchase-builder spacing-top">
+                <h3>Change calculator</h3>
+                <p class="purchase-selected"><strong>Cash received:</strong> <span id="drawer-cash-received">0.00</span></p>
+                <div class="bill-grid" id="bill-grid">
+                    <button type="button" class="bill-button" data-value="5">5</button>
+                    <button type="button" class="bill-button" data-value="10">10</button>
+                    <button type="button" class="bill-button" data-value="20">20</button>
+                    <button type="button" class="bill-button" data-value="50">50</button>
+                    <button type="button" class="bill-button" data-value="100">100</button>
+                    <button type="button" class="bill-button" data-value="200">200</button>
+                    <button type="button" class="bill-button" data-value="500">500</button>
+                    <button type="button" class="bill-button" data-value="1000">1000</button>
+                </div>
+                <div class="bill-actions">
+                    <button type="button" id="bill-undo" class="ghost-button">Undo last</button>
+                    <button type="button" id="bill-reset" class="ghost-button">Reset</button>
+                </div>
+                <p class="purchase-selected"><strong>Rendu:</strong> <span id="drawer-change-result">0.00</span></p>
+                <p class="purchase-selected" id="drawer-change-note">.</p>
+            </div>
+            <button type="submit" style="margin-top: 5px; width: 100%;">Payer</button>
         </form>
 
     </aside>
@@ -100,7 +106,10 @@
 
 {% block js %}
     <script>
-        window.cashierDetailsUrlTemplate = "{% url 'restaurant:cashier_order_details' 0 %}";
+        window.cashierOrderDetailsUrlTemplate = "{% url 'restaurant:cashier_order_details' 0 %}";
+        window.cashierTableDetailsUrlTemplate = "{% url 'restaurant:cashier_table_details' 0 %}";
+        window.cashierOrderPayUrlTemplate = "{% url 'restaurant:update_order_status' 0 'paid' %}";
+        window.cashierTablePayUrlTemplate = "{% url 'restaurant:pay_table_orders' 0 %}";
     </script>
     <script src="{% static 'restaurant/js/cashier-details.js' %}"></script>
 {% endblock %}

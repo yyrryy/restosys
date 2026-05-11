@@ -1,6 +1,5 @@
 from datetime import timezone
 import json
-from decimal import Decimal, InvalidOperation
 from functools import wraps
 from multiprocessing import context
 
@@ -166,7 +165,7 @@ def deduct_order_stock(order):
 @role_required(UserProfile.ROLE_OWNER)
 def owner_dashboard(request):
     orders = Order.objects.prefetch_related('items')
-    paid_total = sum(order.total for order in orders.filter(status=Order.STATUS_PAID))
+    paid_total = sum(order.payable_total for order in orders.filter(status=Order.STATUS_PAID))
     context = dashboard_context('owner', request.user)
     context.update({
         'stats': [
@@ -444,7 +443,7 @@ def cashier_dashboard(request):
     payable_orders = Order.objects.filter(status__in=payable_statuses).prefetch_related('items__menu_item', 'table')
     paid_orders_queryset = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items__menu_item', 'table')
     paid_orders = paid_orders_queryset[:20]
-    cash_collected = sum(order.total for order in paid_orders_queryset)
+    cash_collected = sum(order.payable_total for order in paid_orders_queryset)
     context = dashboard_context('cashier', request.user)
     context.update({
         'stats': [
@@ -457,6 +456,39 @@ def cashier_dashboard(request):
         'paid_orders': paid_orders,
     })
     return render(request, 'restaurant/cashier_dashboard.html', context)
+
+
+def parse_discount_input(discount_raw):
+    discount_amount = 0
+    if discount_raw:
+        try:
+            discount_amount = float(discount_raw)
+        except ValueError:
+            return None, 'Invalid discount amount.'
+    if discount_amount < 0:
+        return None, 'Discount amount cannot be negative.'
+    return discount_amount, None
+
+
+def apply_discount_to_orders(orders, discount_amount):
+    if not orders:
+        return
+    subtotal = sum(order.total for order in orders)
+    capped_discount = min(discount_amount, subtotal)
+    if subtotal <= 0 or capped_discount <= 0:
+        for order in orders:
+            order.discount_amount = 0
+        return
+
+    remaining_discount = capped_discount
+    for index, order in enumerate(orders):
+        if index == len(orders) - 1:
+            order_discount = min(max(remaining_discount, 0), order.total)
+        else:
+            proportional_share = (order.total / subtotal) * capped_discount
+            order_discount = min(order.total, proportional_share, remaining_discount)
+        order.discount_amount = max(order_discount, 0)
+        remaining_discount -= order.discount_amount
 
 
 @login_required
@@ -478,11 +510,89 @@ def cashier_order_details(request, order_id):
     ]
     return JsonResponse({
         'id': order.id,
+        'order_label': f'#{order.id}',
         'table': str(order.table) if order.table else 'Takeaway',
         'status': order.get_status_display(),
-        'total': float(order.total),
+        'subtotal': float(order.total),
+        'discount_amount': float(order.discount_amount or 0),
+        'total': float(order.payable_total),
         'items': items,
     })
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def cashier_table_details(request, table_id):
+    payable_statuses = [Order.STATUS_READY, Order.STATUS_SERVED]
+    table = get_object_or_404(DiningTable, pk=table_id)
+    orders = list(
+        Order.objects.filter(table=table, status__in=payable_statuses)
+        .prefetch_related('items__menu_item')
+        .order_by('date')
+    )
+    if not orders:
+        return JsonResponse({'detail': 'No payable orders found for this table.'}, status=404)
+
+    items = []
+    for order in orders:
+        for item in order.items.all():
+            items.append({
+                'name': f'#{order.id} - {item.menu_item.name}',
+                'quantity': item.quantity,
+                'unit_price': float(item.unit_price),
+                'line_total': float(item.line_total),
+            })
+
+    subtotal = sum(order.total for order in orders)
+    discount_amount = sum(order.discount_amount for order in orders)
+    return JsonResponse({
+        'id': table.id,
+        'order_label': ', '.join(f'#{order.id}' for order in orders),
+        'table': str(table),
+        'status': f'{len(orders)} order(s) awaiting payment',
+        'subtotal': float(subtotal),
+        'discount_amount': float(discount_amount),
+        'total': float(max(subtotal - discount_amount, 0)),
+        'items': items,
+    })
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def pay_table_orders(request, table_id):
+    if request.method != 'POST':
+        return redirect('restaurant:cashier_dashboard')
+
+    payable_statuses = [Order.STATUS_READY, Order.STATUS_SERVED]
+    table = get_object_or_404(DiningTable, pk=table_id)
+    orders = list(
+        Order.objects.filter(table=table, status__in=payable_statuses)
+        .prefetch_related('items')
+        .order_by('date')
+    )
+    if not orders:
+        messages.error(request, 'No payable orders found for this table.')
+        return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
+
+    discount_raw = request.POST.get('discount_amount', '').strip()
+    discount_amount, discount_error = parse_discount_input(discount_raw)
+    if discount_error:
+        messages.error(request, discount_error)
+        return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
+
+    apply_discount_to_orders(orders, discount_amount)
+    with transaction.atomic():
+        for order in orders:
+            order.status = Order.STATUS_PAID
+            order.save(update_fields=['status', 'discount_amount'])
+
+        has_unpaid_orders = Order.objects.filter(table=table).exclude(status=Order.STATUS_PAID).exists()
+        if not has_unpaid_orders:
+            table.status = DiningTable.STATUS_AVAILABLE
+            table.save(update_fields=['status'])
+
+    messages.success(request, f'Table {table} payment recorded for {len(orders)} order(s).')
+    return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
 
 
 @login_required
@@ -499,10 +609,10 @@ def cash_desk_dashboard(request):
             return redirect('restaurant:cash_desk_dashboard')
 
     entries = CashDeskEntry.objects.select_related('created_by')
-    in_total = entries.filter(entry_type=CashDeskEntry.TYPE_IN).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-    out_total = entries.filter(entry_type=CashDeskEntry.TYPE_OUT).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    in_total = entries.filter(entry_type=CashDeskEntry.TYPE_IN).aggregate(total=Sum('amount'))['total'] or 0.0
+    out_total = entries.filter(entry_type=CashDeskEntry.TYPE_OUT).aggregate(total=Sum('amount'))['total'] or 0.0
     paid_orders = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items')
-    order_cash_total = sum(order.total for order in paid_orders)
+    order_cash_total = sum(order.payable_total for order in paid_orders)
     context = dashboard_context('cashier', request.user)
     context.update({
         'form': form,
@@ -527,7 +637,7 @@ def parse_scale_barcode(barcode):
         'raw': barcode,
         'prefix': barcode[:2],
         'plu': int(barcode[2:7]),
-        'price': Decimal(int(barcode[7:12])) / Decimal('100'),
+        'price': int(barcode[7:12]) / 100.0,
     }, None
 
 
@@ -660,14 +770,14 @@ def parse_purchase_lines(raw_lines):
             continue
 
         try:
-            quantity = Decimal(str(line.get('quantity')))
-        except (InvalidOperation, TypeError):
+            quantity = float(line.get('quantity'))
+        except (TypeError, ValueError):
             errors.append(f'Line {index}: quantity is invalid.')
             continue
 
         try:
-            unit_cost = Decimal(str(line.get('unit_cost')))
-        except (InvalidOperation, TypeError):
+            unit_cost = float(line.get('unit_cost'))
+        except (TypeError, ValueError):
             errors.append(f'Line {index}: price is invalid.')
             continue
 
@@ -800,17 +910,35 @@ def update_order_status(request, order_id, status):
         if status in cashier_status and role not in {UserProfile.ROLE_CASHIER, UserProfile.ROLE_OWNER}:
             messages.error(request, 'Only cashier accounts can mark orders as paid.')
             return redirect(request.POST.get('next') or 'restaurant:dashboard')
-        if status == Order.STATUS_SERVED:
+        if status == Order.STATUS_READY and order.status != Order.STATUS_PREPARING:
             success, stock_message = deduct_order_stock(order)
             if not success:
                 messages.error(request, stock_message)
                 return redirect(request.POST.get('next') or 'restaurant:dashboard')
+            
+        if status == Order.STATUS_PAID:
+            discount_raw = request.POST.get('discount_amount', '').strip()
+            discount_amount, discount_error = parse_discount_input(discount_raw)
+            if discount_error:
+                messages.error(request, discount_error)
+                return redirect(request.POST.get('next') or 'restaurant:dashboard')
+            apply_discount_to_orders([order], discount_amount)
+
         order.status = status
-        order.save(update_fields=['status'])
+        if status == Order.STATUS_PAID:
+            order.save(update_fields=['status', 'discount_amount'])
+        else:
+            order.save(update_fields=['status'])
         if status == Order.STATUS_PAID and order.table:
-            order.table.status = DiningTable.STATUS_AVAILABLE
-            order.table.save(update_fields=['status'])
+            has_unpaid_orders = (
+                Order.objects.filter(table=order.table)
+                .exclude(status=Order.STATUS_PAID)
+                .exists()
+            )
+            if not has_unpaid_orders:
+                order.table.status = DiningTable.STATUS_AVAILABLE
+                order.table.save(update_fields=['status'])
         messages.success(request, f'Order #{order.pk} marked {order.get_status_display()}.')
-        if status == Order.STATUS_SERVED:
+        if status == Order.STATUS_READY:
             messages.success(request, stock_message)
     return redirect(request.POST.get('next') or 'restaurant:dashboard')

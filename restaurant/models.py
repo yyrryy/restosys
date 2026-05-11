@@ -98,6 +98,7 @@ class Order(models.Model):
     customer_name = models.CharField(max_length=120, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_QUEUED)
     stock_deducted = models.BooleanField(default=False)
+    discount_amount = models.FloatField(default=0)
     date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -110,6 +111,10 @@ class Order(models.Model):
     @property
     def total(self):
         return sum(item.line_total for item in self.items.all())
+
+    @property
+    def payable_total(self):
+        return max(self.total - self.discount_amount, 0)
 
 
 class OrderItem(models.Model):

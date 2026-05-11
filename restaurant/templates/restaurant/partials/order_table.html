@@ -20,7 +20,7 @@
                     {% endfor %}
                 </td>
                 <td><span class="status status-{{ order.status }}">{{ order.get_status_display }}</span></td>
-                <td>{{ order.total }}</td>
+                <td>{% if use_payable_total %}{{ order.payable_total }}{% else %}{{ order.total }}{% endif %}</td>
                 {% if kitchen_actions %}
                     <td class="action-cell">
                         {% if order.status == 'queued' %}
@@ -38,7 +38,7 @@
                     </td>
                 {% elif cashier_actions %}
                     <td class="action-cell">
-                        <button type="button" class="ghost-button cashier-details-trigger" data-order-id="{{ order.id }}">Details</button>
+                        <button type="button" class="ghost-button cashier-details-trigger" data-order-id="{{ order.id }}" {% if order.table_id %}data-table-id="{{ order.table_id }}"{% endif %}>Details</button>
                         <!-- <form method="post" action="{% url 'restaurant:update_order_status' order.id 'paid' %}">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ next_url }}">
