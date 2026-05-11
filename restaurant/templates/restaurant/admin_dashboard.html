@@ -81,7 +81,7 @@
         <article class="panel">
             <div class="panel-heading"><h2>Menu</h2></div>
             <table>
-                <thead><tr><th>Dish</th><th>Category</th><th>Price</th><th>Image</th><th>Components</th><th>Available</th></tr></thead>
+                <thead><tr><th>Dish</th><th>Category</th><th>Price</th><th>Image</th><th>Components</th><th>Available</th><th>Action</th></tr></thead>
                 <tbody>
                     {% for item in menu_items %}
                         <tr>
@@ -97,9 +97,12 @@
                                 {% endfor %}
                             </td>
                             <td>{{ item.is_available|yesno:"Yes,No" }}</td>
+                            <td class="action-cell">
+                                <a class="ghost-button" href="{% url 'restaurant:menu_item_history' item.id %}">Historique</a>
+                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="6">No dishes yet.</td></tr>
+                        <tr><td colspan="7">No dishes yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

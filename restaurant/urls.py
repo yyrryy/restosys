@@ -11,6 +11,7 @@ urlpatterns = [
     path('suppliers/', views.suppliers_dashboard, name='suppliers_dashboard'),
     path('purchases/', views.purchase_dashboard, name='purchase_dashboard'),
     path('purchases/search-items/', views.purchase_item_search, name='purchase_item_search'),
+    path('menu/<int:item_id>/history/', views.menu_item_history, name='menu_item_history'),
     path('inventory/', views.inventory_dashboard, name='inventory_dashboard'),
     path('inventory/<int:item_id>/history/', views.inventory_item_history, name='inventory_item_history'),
     path('pos/', views.pos2_dashboard, name='pos_dashboard'),

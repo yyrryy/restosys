@@ -1,0 +1,28 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Historique article | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Administration menu</p>
+            <h1>{{ menu_item.name }}</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:admin_dashboard' %}">Retour admin</a>
+    </header>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Modifier l'article</h2>
+        </div>
+        {% if menu_item.image %}
+            <p><strong>Image actuelle :</strong></p>
+            <img class="menu-thumb" src="{{ menu_item.display_image }}" alt="{{ menu_item.name }}">
+        {% endif %}
+        <form class="stack-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ item_form.as_p }}
+            <button type="submit">Enregistrer les modifications</button>
+        </form>
+    </section>
+{% endblock %}

@@ -233,6 +233,26 @@ def admin_dashboard(request):
 
 @login_required
 @role_required(UserProfile.ROLE_ADMIN)
+def menu_item_history(request, item_id):
+    menu_item = get_object_or_404(MenuItem, pk=item_id)
+    item_form = MenuItemForm(instance=menu_item, prefix='menu_item')
+    if request.method == 'POST':
+        item_form = MenuItemForm(request.POST, request.FILES, instance=menu_item, prefix='menu_item')
+        if item_form.is_valid():
+            item_form.save()
+            messages.success(request, f'Article "{menu_item.name}" mis à jour avec succès.')
+            return redirect('restaurant:menu_item_history', item_id=menu_item.id)
+
+    context = dashboard_context('admin', request.user)
+    context.update({
+        'menu_item': menu_item,
+        'item_form': item_form,
+    })
+    return render(request, 'restaurant/menu_item_history.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
 def inventory_dashboard(request):
     inventory_items = InventoryItem.objects.all()
     context = dashboard_context('inventory', request.user)
@@ -652,7 +672,7 @@ def cash_desk_dashboard(request):
     paid_order_total = sum(order.payable_total for order in paid_orders)
     order_cash_total = max(order_in_total, paid_order_total)
     context = dashboard_context('cashier', request.user)
-    cash_collected_from_orders = Order.objects.filter(status=Order.STATUS_PAID)
+    cash_collected_from_orders = Order.objects.filter(status=Order.STATUS_PAID)[:50]
     context.update({
         'form': form,
         'entries': entries[:100],
