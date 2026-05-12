@@ -7,6 +7,8 @@
     const itemIdByPlu = {};
     const barcodeStatsByItemId = {};
     const resolvedItemIdByPlu = {};
+    const itemLastTouchedById = {};
+    let touchSequence = 0;
     const resolvePluUrl = window.posResolvePluUrl || '';
 
     if (!$grid.length) {
@@ -49,6 +51,11 @@
         return Math.round(Number(value || 0) * 1000) / 1000;
     }
 
+    function markItemTouched(itemId) {
+        touchSequence += 1;
+        itemLastTouchedById[itemId] = touchSequence;
+    }
+
     async function resolveItemIdByPlu(plu) {
         if (!plu) {
             return 0;
@@ -88,6 +95,7 @@
             return false;
         }
         field.value = Number(field.value || 0) + 1;
+        markItemTouched(itemId);
         updateCart();
         return true;
     }
@@ -141,6 +149,7 @@
                 price: Number(item.price || 0),
                 lineTotal,
                 barcodeStats,
+                touchedAt: itemLastTouchedById[itemId] || 0,
             });
         });
 
@@ -151,6 +160,8 @@
             $cartTotal.text('0.00');
             return;
         }
+
+        lines.sort((a, b) => b.touchedAt - a.touchedAt || b.itemId - a.itemId);
 
         const linesHtml = lines.map((line) => `
             <div class="cart-line">
@@ -173,7 +184,7 @@
                 </div>
             </div>
         `).join('');
-        $cartLines.prepend(linesHtml);
+        $cartLines.html(linesHtml);
         $cartTotal.text(money(total));
     }
 
@@ -210,7 +221,7 @@
             $fragment.append($tile);
         });
 
-        $grid.empty().prepend($fragment);
+        $grid.empty().append($fragment);
     }
 
     function loadCategoryItems(category) {
@@ -256,6 +267,7 @@
             return;
         }
         delete barcodeStatsByItemId[itemId];
+        markItemTouched(itemId);
         field.value = Math.max(0, Number(field.value || 0) + step);
         updateCart();
     });
@@ -264,6 +276,9 @@
         $('input[id^="id_item_"]').val(0);
         Object.keys(barcodeStatsByItemId).forEach(function (key) {
             delete barcodeStatsByItemId[key];
+        });
+        Object.keys(itemLastTouchedById).forEach(function (key) {
+            delete itemLastTouchedById[key];
         });
         updateCart();
     });
@@ -333,6 +348,7 @@
                 current.totalWeight = roundWeight(current.totalWeight + weight);
                 current.totalPrice = Number((current.totalPrice + parsed.barcodePrice).toFixed(2));
                 barcodeStatsByItemId[itemId] = current;
+                markItemTouched(itemId);
                 updateCart();
             } finally {
                 scanInProgress = false;

@@ -8,6 +8,8 @@
     const clearCartButton = document.getElementById('clear-cart');
     const barcodeStatsByFieldId = {};
     const resolvedItemIdByPlu = {};
+    const itemLastTouchedByFieldId = {};
+    let touchSequence = 0;
     const resolvePluUrl = window.posResolvePluUrl || '';
 
     function activateTab(tabId) {
@@ -45,6 +47,11 @@
 
     function roundWeight(value) {
         return Math.round(Number(value || 0) * 1000) / 1000;
+    }
+
+    function markFieldTouched(fieldId) {
+        touchSequence += 1;
+        itemLastTouchedByFieldId[fieldId] = touchSequence;
     }
 
     async function resolveItemIdByPlu(plu) {
@@ -100,6 +107,7 @@
                 quantity,
                 price,
                 barcodeStats,
+                touchedAt: itemLastTouchedByFieldId[field.id] || 0,
             });
         });
 
@@ -109,6 +117,7 @@
             return;
         }
 
+        lines.sort((a, b) => b.touchedAt - a.touchedAt);
         cartLines.innerHTML = lines.map((line) => `
             <div class="cart-line">
                 <div>
@@ -147,6 +156,7 @@
             }
             delete barcodeStatsByFieldId[field.id];
             field.value = Number(field.value || 0) + 1;
+            markFieldTouched(field.id);
             updateCart();
         });
     });
@@ -160,6 +170,7 @@
         delete barcodeStatsByFieldId[field.id];
         const nextValue = Math.max(0, Number(field.value || 0) + Number(button.dataset.qtyStep));
         field.value = nextValue;
+        markFieldTouched(field.id);
         updateCart();
     });
 
@@ -169,6 +180,7 @@
             if (field) {
                 delete barcodeStatsByFieldId[field.id];
                 field.value = 0;
+                delete itemLastTouchedByFieldId[field.id];
             }
         });
         updateCart();
@@ -220,6 +232,7 @@
                 if (!unitPrice || !parsed.barcodePrice) {
                     delete barcodeStatsByFieldId[field.id];
                     field.value = Number(field.value || 0) + 1;
+                    markFieldTouched(field.id);
                     updateCart();
                     return;
                 }
@@ -232,6 +245,7 @@
                 current.totalWeight = roundWeight(current.totalWeight + weight);
                 current.totalPrice = Number((current.totalPrice + parsed.barcodePrice).toFixed(2));
                 barcodeStatsByFieldId[field.id] = current;
+                markFieldTouched(field.id);
                 updateCart();
             } finally {
                 scanInProgress = false;
