@@ -106,7 +106,7 @@ def _escpos_raster_logo(logo_path):
 
 
 def _kitchen_ticket_text(order):
-    table_name = str(order.table) if order.table else 'Takeaway'
+    table_name = str(order.table) if order.table else 'Emporter'
     waiter_name = order.waiter.get_username() if order.waiter else '-'
     lines = [
         'GRILLADE LE GOUT',
@@ -130,8 +130,8 @@ def _kitchen_ticket_text(order):
 
 def _payment_receipt_payload(order):
     logo_path = _logo_file_path()
-    table_name = str(order.table) if order.table else 'Takeaway'
-    waiter_name = order.waiter.get_username() if order.waiter else 'Cashier'
+    table_name = str(order.table) if order.table else 'Emporter'
+    waiter_name = order.waiter.get_username() if order.waiter else 'Caisse'
     subtotal = float(order.total)
     discount = float(order.discount_amount or 0)
     total = float(order.payable_total)
@@ -159,7 +159,9 @@ def _payment_receipt_payload(order):
     lines.extend([
         f'Total: {total:.2f} DH',
         '==========================================',
-        'THANK YOU',
+        'Merci pour votre visite !',
+        'commander sur nos site: www.grilladelegout.ma',
+        '',
         '',
         '',
     ])
