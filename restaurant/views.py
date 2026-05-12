@@ -77,7 +77,7 @@ def create_order_from_form(form, menu_items, waiter, print_ticket=True):
         table=form.cleaned_data['table'],
         customer_name=form.cleaned_data['customer_name'],
         waiter=waiter,
-        status=Order.STATUS_QUEUED,
+        status=Order.STATUS_READY,
     )
     menu_by_id = {item.pk: item for item in menu_items}
     for item_id, quantity in form.selected_items():
@@ -523,7 +523,7 @@ def cashier_dashboard(request):
 @role_required(UserProfile.ROLE_CASHIER)
 def cashier_orders_live(request):
     ready_orders = (
-        Order.objects.exclude(status=Order.STATUS_PAID)
+        Order.objects.filter(status=Order.STATUS_PREPARING)
         .prefetch_related('items__menu_item', 'table')
         .order_by('date')
     )
