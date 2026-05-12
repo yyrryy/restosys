@@ -185,7 +185,7 @@ def _receipt_text_image(lines):
     if font is None:
         return None
     shaped_lines = [_shape_receipt_line(line) for line in lines]
-    width = 384
+    width = 584
     left_pad = 10
     right_pad = 10
     top_pad = 8
@@ -210,7 +210,7 @@ def _receipt_text_image(lines):
     return image
 
 
-def _kitchen_ticket_text(order):
+def _kitchen_ticket_lines(order):
     table_name = str(order.table) if order.table else 'Emporter'
     waiter_name = order.waiter.get_username() if order.waiter else '-'
     lines = [
@@ -230,7 +230,24 @@ def _kitchen_ticket_text(order):
         '',
         '',
     ])
-    return '\r\n'.join(lines)
+    return lines
+
+
+def _kitchen_ticket_text(order):
+    return '\r\n'.join(_kitchen_ticket_lines(order))
+
+
+def _kitchen_ticket_payload(order):
+    lines = _kitchen_ticket_lines(order)
+    payload = bytearray(b'\x1b@\n')
+    payload.extend(b'\x1ba\x00')
+    text_image = _receipt_text_image(lines)
+    if text_image is not None:
+        payload.extend(_escpos_raster_image(text_image))
+    else:
+        payload.extend('\r\n'.join(lines).encode('cp437', errors='replace'))
+    payload.extend(b'\n\n\n\x1dV\x00')
+    return bytes(payload)
 
 
 def _payment_receipt_payload(order):
@@ -316,8 +333,7 @@ def print_kitchen_ticket(order_id):
         .prefetch_related('items__menu_item')
         .get(pk=order_id)
     )
-    text_payload = _kitchen_ticket_text(order).encode('cp437', errors='replace')
-    payload = b'\x1b@\n' + text_payload + b'\n\n\n\x1dV\x00'
+    payload = _kitchen_ticket_payload(order)
     _print_payload(f'Kitchen Order #{order.id}', payload)
 
 

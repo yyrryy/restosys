@@ -70,11 +70,11 @@ class OrderCreateForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         menu_items = kwargs.pop('menu_items')
-        require_table = kwargs.pop('require_table', True)
+        # require_table = kwargs.pop('require_table', True)
         include_waiter_choice = kwargs.pop('include_waiter_choice', False)
         super().__init__(*args, **kwargs)
         self.fields['table'].queryset = DiningTable.objects.all()
-        self.fields['table'].required = require_table
+        # self.fields['table'].required = require_table
 
         if include_waiter_choice:
             User = get_user_model()
