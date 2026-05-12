@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from django.conf import settings
@@ -6,6 +7,7 @@ from django.conf import settings
 from .models import Order
 
 logger = logging.getLogger(__name__)
+ARABIC_RE = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]')
 
 try:
     import win32print
@@ -82,6 +84,13 @@ def _escpos_raster_logo(logo_path):
         image = image.resize((max_width, max(1, int(image.height * ratio))), Image.LANCZOS)
     image = image.point(lambda px: 255 if px > 180 else 0, mode='1')
 
+    return _escpos_raster_image(image)
+
+
+def _escpos_raster_image(image):
+    if image.mode != '1':
+        image = image.convert('1')
+
     width = image.width
     height = image.height
     width_bytes = (width + 7) // 8
@@ -103,6 +112,84 @@ def _escpos_raster_logo(logo_path):
     y_low = height & 0xFF
     y_high = (height >> 8) & 0xFF
     return b'\x1dv0\x00' + bytes([x_low, x_high, y_low, y_high]) + bytes(raster)
+
+
+def _contains_arabic(text):
+    return bool(ARABIC_RE.search(text or ''))
+
+
+def _shape_receipt_line(text):
+    if not _contains_arabic(text):
+        return text
+    try:
+        import arabic_reshaper
+        from bidi.algorithm import get_display
+    except ImportError:
+        logger.error('Arabic shaping packages missing. Install arabic-reshaper and python-bidi.')
+        return text
+    return get_display(arabic_reshaper.reshape(text))
+
+
+def _load_receipt_font(font_size=22):
+    try:
+        from PIL import ImageFont
+    except ImportError:
+        return None
+
+    configured = getattr(settings, 'THERMAL_RECEIPT_FONT_PATH', '').strip()
+    candidates = []
+    if configured:
+        configured_path = Path(configured)
+        candidates.append(configured_path if configured_path.is_absolute() else Path(settings.BASE_DIR) / configured_path)
+    candidates.extend([
+        Path('C:\\Windows\\Fonts\\arial.ttf'),
+        Path('C:\\Windows\\Fonts\\tahoma.ttf'),
+        Path('C:\\Windows\\Fonts\\segoeui.ttf'),
+    ])
+
+    for font_path in candidates:
+        try:
+            if font_path.exists():
+                return ImageFont.truetype(str(font_path), font_size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+
+def _receipt_text_image(lines):
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError:
+        logger.error('Receipt text image skipped: Pillow is not installed.')
+        return None
+
+    font = _load_receipt_font()
+    if font is None:
+        return None
+    shaped_lines = [_shape_receipt_line(line) for line in lines]
+    width = 384
+    left_pad = 10
+    right_pad = 10
+    top_pad = 8
+    line_spacing = 8
+    bbox = font.getbbox('Ag')
+    glyph_height = (bbox[3] - bbox[1]) if bbox else 20
+    line_height = glyph_height + line_spacing
+    height = top_pad * 2 + max(1, len(shaped_lines)) * line_height
+    image = Image.new('1', (width, height), 1)
+    draw = ImageDraw.Draw(image)
+
+    y = top_pad
+    for raw_line, line in zip(lines, shaped_lines):
+        if _contains_arabic(raw_line):
+            line_bbox = draw.textbbox((0, 0), line, font=font)
+            text_width = (line_bbox[2] - line_bbox[0]) if line_bbox else 0
+            x = max(left_pad, int(width - right_pad - text_width))
+        else:
+            x = left_pad
+        draw.text((x, y), line, font=font, fill=0)
+        y += line_height
+    return image
 
 
 def _kitchen_ticket_text(order):
@@ -176,7 +263,11 @@ def _payment_receipt_payload(order):
         payload.extend(b'GRILLADE LE GOUT\n')
         payload.extend(b'\x1d!\x00')
     payload.extend(b'\x1ba\x00')
-    payload.extend('\r\n'.join(lines).encode('cp437', errors='replace'))
+    text_image = _receipt_text_image(lines)
+    if text_image is not None:
+        payload.extend(_escpos_raster_image(text_image))
+    else:
+        payload.extend('\r\n'.join(lines).encode('cp437', errors='replace'))
     payload.extend(b'\n\n\n\x1dV\x00')
     return bytes(payload)
 
