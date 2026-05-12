@@ -282,7 +282,6 @@ def _payment_receipt_payload(order):
         f'Total: {total:.2f} DH',
         '==========================================',
         'Merci pour votre visite !',
-        'commander sur nos site: www.grilladelegout.ma',
         '',
         '',
         '',
