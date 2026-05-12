@@ -495,9 +495,9 @@ def kitchen_orders_live(request):
 @role_required(UserProfile.ROLE_CASHIER)
 def cashier_dashboard(request):
     payable_statuses = [Order.STATUS_READY, Order.STATUS_SERVED]
-    cashier_visible_statuses = [Order.STATUS_QUEUED, Order.STATUS_PREPARING, Order.STATUS_READY]
+    non_paid_statuses = [Order.STATUS_QUEUED, Order.STATUS_PREPARING, Order.STATUS_READY, Order.STATUS_SERVED]
     ready_orders = (
-        Order.objects.filter(status__in=cashier_visible_statuses)
+        Order.objects.filter(status__in=non_paid_statuses)
         .prefetch_related('items__menu_item', 'table')
         .order_by('date')
     )
@@ -523,9 +523,9 @@ def cashier_dashboard(request):
 @login_required
 @role_required(UserProfile.ROLE_CASHIER)
 def cashier_orders_live(request):
-    cashier_visible_statuses = [Order.STATUS_QUEUED, Order.STATUS_PREPARING, Order.STATUS_READY]
+    non_paid_statuses = [Order.STATUS_QUEUED, Order.STATUS_PREPARING, Order.STATUS_READY, Order.STATUS_SERVED]
     ready_orders = (
-        Order.objects.filter(status__in=cashier_visible_statuses)
+        Order.objects.filter(status__in=non_paid_statuses)
         .prefetch_related('items__menu_item', 'table')
         .order_by('date')
     )
