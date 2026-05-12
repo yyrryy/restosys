@@ -29,7 +29,17 @@
         {% endfor %}
     </section>
 
-    <section class="panel">
+    <section class="panel" data-live-cashier-url="{% url 'restaurant:cashier_orders_live' %}">
+        <div class="panel-heading">
+            <h2>Commandes prêtes</h2>
+            <span class="live-indicator" id="cashier-live-indicator">Live</span>
+        </div>
+        <div id="cashier-ready-feed">
+            {% include 'restaurant/partials/order_table.html' with orders=ready_orders cashier_actions=True next_url=request.path use_payable_total=True %}
+        </div>
+    </section>
+
+    <section class="panel spacing-top">
         <div class="panel-heading">
             <h2>Prêt à payer</h2>
         </div>
@@ -107,5 +117,6 @@
         window.cashierOrderPayUrlTemplate = "{% url 'restaurant:update_order_status' 0 'paid' %}";
         window.cashierTablePayUrlTemplate = "{% url 'restaurant:pay_table_orders' 0 %}";
     </script>
+    <script src="{% static 'restaurant/js/cashier-live.js' %}"></script>
     <script src="{% static 'restaurant/js/cashier-details.js' %}"></script>
 {% endblock %}

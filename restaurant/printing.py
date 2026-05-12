@@ -54,6 +54,7 @@ def _kitchen_ticket_text(order):
     table_name = str(order.table) if order.table else 'Takeaway'
     waiter_name = order.waiter.get_username() if order.waiter else '-'
     lines = [
+        'GRILLADE LE GOUT',
         '==========================================',
         f'KITCHEN ORDER #{order.id}',
         f'Table: {table_name}',

@@ -14,7 +14,6 @@
     const billGrid = document.getElementById('bill-grid');
     const undoButton = document.getElementById('bill-undo');
     const resetButton = document.getElementById('bill-reset');
-    const detailsButtons = document.querySelectorAll('.cashier-details-trigger');
     const orderDetailsUrlTemplate = window.cashierOrderDetailsUrlTemplate;
     const tableDetailsUrlTemplate = window.cashierTableDetailsUrlTemplate;
     const orderPayUrlTemplate = window.cashierOrderPayUrlTemplate;
@@ -24,7 +23,7 @@
     if (
         !drawer || !overlay || !cancelButton || !orderIdEl || !tableEl || !statusEl || !subtotalEl || !totalEl ||
         !itemsBody || !receivedEl || !changeResult || !changeNote || !billGrid ||
-        !undoButton || !resetButton || !detailsButtons.length || !orderDetailsUrlTemplate ||
+        !undoButton || !resetButton || !orderDetailsUrlTemplate ||
         !tableDetailsUrlTemplate || !orderPayUrlTemplate || !tablePayUrlTemplate || !discountInput
     ) {
         return;
@@ -156,15 +155,17 @@
             });
     }
 
-    detailsButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-            const tableId = button.dataset.tableId;
-            if (tableId) {
-                fetchTableDetails(tableId);
-                return;
-            }
-            fetchDetails(button.dataset.orderId);
-        });
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('.cashier-details-trigger');
+        if (!button) {
+            return;
+        }
+        const tableId = button.dataset.tableId;
+        if (tableId) {
+            fetchTableDetails(tableId);
+            return;
+        }
+        fetchDetails(button.dataset.orderId);
     });
 
     billGrid.addEventListener('click', function (event) {
