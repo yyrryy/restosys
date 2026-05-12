@@ -39,13 +39,8 @@
         </div>
     </section>
 
-    <section class="panel spacing-top">
-        <div class="panel-heading">
-            <h2>Prêt à payer</h2>
-        </div>
-        {% include 'restaurant/partials/order_table.html' with orders=payable_orders cashier_actions=True next_url=request.path use_payable_total=True %}
-    </section>
-    <!-- recent paid -->
+    
+    <!-- recent paid  - sent to notwanted-->
     <!-- RDEF345345 -->
 
     <div id="cashier-details-overlay" class="cashier-details-overlay"></div>
