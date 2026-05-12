@@ -136,24 +136,42 @@ def _load_receipt_font(font_size=22):
     except ImportError:
         return None
 
+    def supports_arabic(font):
+        try:
+            return font.getmask('ت').getbbox() is not None
+        except Exception:
+            return False
+
     configured = getattr(settings, 'THERMAL_RECEIPT_FONT_PATH', '').strip()
     candidates = []
     if configured:
         configured_path = Path(configured)
         candidates.append(configured_path if configured_path.is_absolute() else Path(settings.BASE_DIR) / configured_path)
     candidates.extend([
+        Path(settings.BASE_DIR) / 'static' / 'restaurant' / 'fonts' / 'NotoNaskhArabic-Regular.ttf',
+        Path(settings.BASE_DIR) / 'static' / 'restaurant' / 'fonts' / 'NotoSansArabic-Regular.ttf',
+    ])
+    candidates.extend([
         Path('C:\\Windows\\Fonts\\arial.ttf'),
+        Path('C:\\Windows\\Fonts\\arialuni.ttf'),
         Path('C:\\Windows\\Fonts\\tahoma.ttf'),
         Path('C:\\Windows\\Fonts\\segoeui.ttf'),
+        Path('/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'),
+        Path('/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf'),
+        Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),
     ])
 
     for font_path in candidates:
         try:
             if font_path.exists():
-                return ImageFont.truetype(str(font_path), font_size)
+                font = ImageFont.truetype(str(font_path), font_size)
+                if supports_arabic(font):
+                    logger.info('Using receipt font: %s', font_path)
+                    return font
         except Exception:
             continue
-    return ImageFont.load_default()
+    logger.error('No Arabic-capable receipt font found. Set THERMAL_RECEIPT_FONT_PATH to a TTF that supports Arabic.')
+    return None
 
 
 def _receipt_text_image(lines):
