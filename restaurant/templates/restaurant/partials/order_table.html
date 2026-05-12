@@ -23,13 +23,13 @@
                 <td>{% if use_payable_total %}{{ order.payable_total|floatformat:2 }}{% else %}{{ order.total|floatformat:2 }}{% endif %}</td>
                 {% if kitchen_actions %}
                     <td class="action-cell">
-                        {% if order.status == 'queued' %}
+                        <!-- {% if order.status == 'queued' %}
                             <form method="post" action="{% url 'restaurant:update_order_status' order.id 'preparing' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="next" value="{{ next_url }}">
                                 <button type="submit">Démarrer</button>
                             </form>
-                        {% endif %}
+                        {% endif %} -->
                         <form method="post" action="{% url 'restaurant:update_order_status' order.id 'ready' %}">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{{ next_url }}">
