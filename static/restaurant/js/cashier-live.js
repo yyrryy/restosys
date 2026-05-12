@@ -18,7 +18,7 @@
             const data = await response.json();
             readyFeed.innerHTML = data.ready_orders_html;
             if (indicator) {
-                indicator.textContent = `Live · ${data.ready_count} ready`;
+                indicator.textContent = `Live · ${data.visible_count} commandes`;
                 indicator.classList.remove('offline');
             }
         } catch (error) {

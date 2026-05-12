@@ -495,7 +495,12 @@ def kitchen_orders_live(request):
 @role_required(UserProfile.ROLE_CASHIER)
 def cashier_dashboard(request):
     payable_statuses = [Order.STATUS_READY, Order.STATUS_SERVED]
-    ready_orders = Order.objects.filter(status=Order.STATUS_READY).prefetch_related('items__menu_item', 'table')
+    cashier_visible_statuses = [Order.STATUS_QUEUED, Order.STATUS_PREPARING, Order.STATUS_READY]
+    ready_orders = (
+        Order.objects.filter(status__in=cashier_visible_statuses)
+        .prefetch_related('items__menu_item', 'table')
+        .order_by('date')
+    )
     payable_orders = Order.objects.filter(status__in=payable_statuses).prefetch_related('items__menu_item', 'table')
     paid_orders_queryset = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items__menu_item', 'table')
     paid_orders = paid_orders_queryset[:20]
@@ -518,14 +523,19 @@ def cashier_dashboard(request):
 @login_required
 @role_required(UserProfile.ROLE_CASHIER)
 def cashier_orders_live(request):
-    ready_orders = Order.objects.filter(status=Order.STATUS_READY).prefetch_related('items__menu_item', 'table')
+    cashier_visible_statuses = [Order.STATUS_QUEUED, Order.STATUS_PREPARING, Order.STATUS_READY]
+    ready_orders = (
+        Order.objects.filter(status__in=cashier_visible_statuses)
+        .prefetch_related('items__menu_item', 'table')
+        .order_by('date')
+    )
     return JsonResponse({
         'ready_orders_html': render_to_string(
             'restaurant/partials/order_table.html',
             {'orders': ready_orders, 'cashier_actions': True, 'next_url': '/cashier/', 'use_payable_total': True},
             request=request,
         ),
-        'ready_count': ready_orders.count(),
+        'visible_count': ready_orders.count(),
     })
 
 

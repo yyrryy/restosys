@@ -214,11 +214,11 @@ def _kitchen_ticket_lines(order):
     table_name = str(order.table) if order.table else 'Emporter'
     waiter_name = order.waiter.get_username() if order.waiter else '-'
     lines = [
-        'GRILLADE LE GOUT',
+        'GRILLADE LE GOUT: à la cuisine',
         '==========================================',
-        f'KITCHEN ORDER #{order.id}',
-        f'Table: {table_name}',
-        f'Waiter: {waiter_name}',
+        # f'KITCHEN ORDER #{order.id}',
+        # f'Table: {table_name}',
+        # f'Waiter: {waiter_name}',
         f'Time: {order.date.strftime("%Y-%m-%d %H:%M:%S")}',
         '------------------------------------------',
     ]
