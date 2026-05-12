@@ -317,7 +317,7 @@ def pos_dashboard(request):
     form = OrderCreateForm(
         request.POST or None,
         menu_items=menu_items,
-        require_table=not is_cashier_mode,
+        require_table=True,
         include_waiter_choice=is_cashier_mode,
     )
 
@@ -366,7 +366,7 @@ def pos2_dashboard(request):
     form = OrderCreateForm(
         request.POST or None,
         menu_items=menu_items,
-        require_table=not is_cashier_mode,
+        require_table=True,
         include_waiter_choice=is_cashier_mode,
     )
 
