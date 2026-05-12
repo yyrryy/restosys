@@ -397,10 +397,20 @@ def pos2_dashboard(request):
     menu_categories = list(MenuCategory.objects.values_list('name', 'name'))
     if not menu_categories:
         menu_categories = list(menu_items.values_list('category', 'category').distinct())
+    menu_items_payload = [
+        {
+            'id': item.pk,
+            'name': item.name,
+            'price': float(item.price or 0),
+            'plu': item.plu,
+        }
+        for item in menu_items
+    ]
     context.update({
         'form': form,
         'is_cashier_mode': is_cashier_mode,
         'menu_categories': menu_categories,
+        'menu_items_payload': menu_items_payload,
     })
     return render(request, 'restaurant/pos2.html', context)
 
@@ -419,11 +429,67 @@ def pos2_category_items(request):
             'name': item.name,
             'category': item.category,
             'price': float(item.price or 0),
+            'plu': item.plu,
             'display_image': item.display_image,
         }
         for item in menu_items
     ]
     return JsonResponse({'items': items})
+
+
+def resolve_pos_menu_item_by_plu(plu):
+    menu_item = MenuItem.objects.filter(is_available=True, plu=plu).first()
+    if menu_item:
+        return menu_item
+
+    return None
+    # menu_item = (
+    #     MenuItem.objects.filter(is_available=True, components__inventory_item__plu=plu)
+    #     .order_by('id')
+    #     .first()
+    # )
+    # if menu_item:
+    #     return menu_item
+
+    # inventory_item = InventoryItem.objects.filter(plu=plu).first()
+    # if not inventory_item:
+    #     return None
+
+    # menu_item = (
+    #     MenuItem.objects.filter(is_available=True, name__icontains=inventory_item.name)
+    #     .order_by('id')
+    #     .first()
+    # )
+    # if menu_item:
+    #     return menu_item
+
+    # inventory_name_tokens = [token for token in inventory_item.name.split() if token]
+    # if not inventory_name_tokens:
+    #     return None
+    # query = MenuItem.objects.filter(is_available=True)
+    # for token in inventory_name_tokens[:3]:
+    #     query = query.filter(name__icontains=token)
+    # return query.order_by('id').first()
+
+
+
+@login_required
+@role_required(UserProfile.ROLE_WAITER, UserProfile.ROLE_CASHIER)
+def pos_resolve_plu(request):
+    plu_raw = (request.GET.get('plu') or '').strip()
+    if not plu_raw.isdigit():
+        return JsonResponse({'ok': False, 'error': 'PLU must be numeric.'}, status=400)
+    plu = int(plu_raw)
+    menu_item = resolve_pos_menu_item_by_plu(plu)
+    if not menu_item:
+        return JsonResponse({'ok': False, 'error': f'No menu item found for PLU {plu}.'})
+    return JsonResponse({
+        'ok': True,
+        'item_id': menu_item.id,
+        'item_name': menu_item.name,
+        'item_price': float(menu_item.price or 0),
+        'plu': plu,
+    })
 
 
 @login_required

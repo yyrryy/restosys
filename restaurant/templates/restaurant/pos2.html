@@ -81,5 +81,9 @@
 {% endblock %}
 
 {% block js %}
+    {{ menu_items_payload|json_script:"pos2-items-payload" }}
+    <script>
+        window.posResolvePluUrl = "{% url 'restaurant:pos_resolve_plu' %}";
+    </script>
     <script src="{% static 'restaurant/js/waiter-pos2.js' %}"></script>
 {% endblock %}

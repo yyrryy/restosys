@@ -51,7 +51,8 @@ for index, row in enumerate(rows, start=1):
 
     defaults = {
         "category": category,
-        "price": to_float(row.get("price"), default=0.0),
+        "price": to_float(row.get("price"), default=None),
+        "plu": to_float(row.get("plu"), default=0.0),
         "is_available": True,
     }
 

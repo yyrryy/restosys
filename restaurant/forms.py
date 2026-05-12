@@ -86,7 +86,7 @@ class OrderCreateForm(forms.Form):
             )
 
         for item in menu_items:
-            self.fields[f'item_{item.pk}'] = forms.IntegerField(
+            self.fields[f'item_{item.pk}'] = forms.FloatField(
                 label=f'{item.name} - {item.price}',
                 min_value=0,
                 required=False,

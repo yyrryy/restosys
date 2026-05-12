@@ -64,7 +64,7 @@ class MenuItem(models.Model):
     price = models.FloatField(default=0, null=True, blank=True)
     image = models.FileField(upload_to='menu_items/', blank=True)
     is_available = models.BooleanField(default=True)
-
+    plu = models.IntegerField(unique=True, null=True, blank=True, db_index=True, default=None)
     class Meta:
         ordering = ['category', 'name']
 
@@ -120,7 +120,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     menu_item = models.ForeignKey(MenuItem, on_delete=models.PROTECT)
-    quantity = models.PositiveSmallIntegerField(default=1)
+    quantity = models.FloatField(default=1)
     unit_price = models.FloatField(default=0)
 
     def __str__(self):

@@ -44,6 +44,7 @@
                             type="button"
                             data-category="{{ item.category }}"
                             data-field="id_item_{{ item.id }}"
+                            data-plu="{{ item.plu }}"
                             data-name="{{ item.name }}"
                             data-price="{{ item.price }}"
                         >
@@ -90,5 +91,8 @@
         </form>
     </section>
 
+    <script>
+        window.posResolvePluUrl = "{% url 'restaurant:pos_resolve_plu' %}";
+    </script>
     <script src="/static/restaurant/js/waiter-pos.js"></script>
 {% endblock %}
