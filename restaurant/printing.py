@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover - depends on host OS/runtime
 
 
 def _printer_name():
-    return "XP-76C"
+    return "XP-80C"
 
 
 def _available_printer_names():
