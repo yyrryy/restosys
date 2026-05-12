@@ -98,7 +98,7 @@ def create_order_from_form(form, menu_items, waiter, print_ticket=True):
 
 def create_paid_pos_order(form, menu_items):
     selected_waiter = form.cleaned_data.get('cashier_waiter')
-    order = create_order_from_form(form, menu_items, selected_waiter, print_ticket=False)
+    order = create_order_from_form(form, menu_items, selected_waiter, print_ticket=True)
     success, stock_message = deduct_order_stock(order)
     if not success:
         order.delete()
