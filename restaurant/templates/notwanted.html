@@ -1,0 +1,7 @@
+<!-- RDEF345345 -->
+<section class="panel spacing-top">
+    <div class="panel-heading">
+        <h2>Commandes payées récentes</h2>
+    </div>
+    {% include 'restaurant/partials/order_table.html' with orders=paid_orders use_payable_total=True %}
+</section>

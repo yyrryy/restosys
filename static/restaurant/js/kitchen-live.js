@@ -17,8 +17,6 @@
                 throw new Error('Kitchen refresh failed');
             }
             const data = await response.json();
-            console.log('Kitchen live data:', data);
-            console.log('Kitchen live data:', data);
             ordersFeed.innerHTML = data.orders_html;
             readyFeed.innerHTML = data.ready_orders_html;
             if (indicator) {

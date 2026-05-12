@@ -154,3 +154,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'restaurant:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+THERMAL_PRINTER_ENABLED = os.getenv('THERMAL_PRINTER_ENABLED', 'true').lower() in ('1', 'true', 'yes')
+THERMAL_PRINTER_NAME = os.getenv('THERMAL_PRINTER_NAME', 'XP-V330N')

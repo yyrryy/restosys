@@ -10,6 +10,7 @@
             <h1>Paiements et encaissements</h1>
         </div>
         <a class="button-link" href="{% url 'restaurant:cashier_barcode_scanner' %}">Scanner code-barres</a>
+        <a class="button-link" href="/pos/">Menu</a>
     </header>
 
     <section class="stats-grid">
@@ -34,13 +35,8 @@
         </div>
         {% include 'restaurant/partials/order_table.html' with orders=payable_orders cashier_actions=True next_url=request.path use_payable_total=True %}
     </section>
-
-    <section class="panel spacing-top">
-        <div class="panel-heading">
-            <h2>Commandes payées récentes</h2>
-        </div>
-        {% include 'restaurant/partials/order_table.html' with orders=paid_orders use_payable_total=True %}
-    </section>
+    <!-- recent paid -->
+    <!-- RDEF345345 -->
 
     <div id="cashier-details-overlay" class="cashier-details-overlay"></div>
     <aside id="cashier-details-drawer" class="cashier-details-drawer">
@@ -70,7 +66,7 @@
 
         <form method="post" class="paiment-form">
             {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
             <div style="background: #f8fafc; padding: 10px; margin-top: 5px; border-radius: 5px;">
 
                 <p class="purchase-selected" style="padding: 5px;"><strong>Total avant la remise :</strong> <strong id="drawer-order-subtotal" style="color: green; font-size: 20px;">0.00</strong>DH</p>

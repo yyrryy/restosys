@@ -653,6 +653,11 @@ button {
     font-size: 22px;
 }
 
+.pos-actions {
+    display: grid;
+    gap: 8px;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;

@@ -26,6 +26,7 @@ from .forms import (
     SupplierForm,
 )
 from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, Supplier, UserProfile, Scalbarcodescan
+from .printing import dispatch_kitchen_ticket
 
 
 def user_role(user):
@@ -71,7 +72,7 @@ def dashboard(request):
     return redirect('restaurant:waiter_dashboard')
 
 
-def create_order_from_form(form, menu_items, waiter):
+def create_order_from_form(form, menu_items, waiter, print_ticket=True):
     order = Order.objects.create(
         table=form.cleaned_data['table'],
         customer_name=form.cleaned_data['customer_name'],
@@ -90,12 +91,14 @@ def create_order_from_form(form, menu_items, waiter):
     if order.table:
         order.table.status = DiningTable.STATUS_OCCUPIED
         order.table.save(update_fields=['status'])
+    if print_ticket:
+        dispatch_kitchen_ticket(order.id)
     return order
 
 
 def create_paid_pos_order(form, menu_items):
     selected_waiter = form.cleaned_data.get('cashier_waiter')
-    order = create_order_from_form(form, menu_items, selected_waiter)
+    order = create_order_from_form(form, menu_items, selected_waiter, print_ticket=False)
     success, stock_message = deduct_order_stock(order)
     if not success:
         order.delete()
@@ -107,6 +110,12 @@ def create_paid_pos_order(form, menu_items):
         order.table.status = DiningTable.STATUS_AVAILABLE
         order.table.save(update_fields=['status'])
     return order, stock_message
+
+
+def send_cashier_pos_order_to_kitchen(form, menu_items):
+    selected_waiter = form.cleaned_data.get('cashier_waiter')
+    order = create_order_from_form(form, menu_items, selected_waiter)
+    return order, None
 
 
 def deduct_order_stock(order):
@@ -316,12 +325,20 @@ def pos_dashboard(request):
         if not form.selected_items():
             messages.error(request, 'Choose at least one dish before checkout.')
         elif is_cashier_mode:
-            order, stock_message = create_paid_pos_order(form, menu_items)
-            if order:
-                messages.success(request, f'POS order #{order.pk} paid.')
-                messages.success(request, stock_message)
-                return redirect('restaurant:pos_dashboard')
-            messages.error(request, stock_message)
+            cashier_action = request.POST.get('cashier_action')
+            if cashier_action == 'send_to_kitchen':
+                order, action_error = send_cashier_pos_order_to_kitchen(form, menu_items)
+                if order:
+                    messages.success(request, f'Order #{order.pk} sent to kitchen.')
+                    return redirect('restaurant:pos_dashboard')
+                messages.error(request, action_error)
+            else:
+                order, stock_message = create_paid_pos_order(form, menu_items)
+                if order:
+                    messages.success(request, f'POS order #{order.pk} paid.')
+                    messages.success(request, stock_message)
+                    return redirect('restaurant:pos_dashboard')
+                messages.error(request, stock_message)
         else:
             order = create_order_from_form(form, menu_items, request.user)
             messages.success(request, f'Order #{order.pk} sent to kitchen.')
@@ -357,12 +374,20 @@ def pos2_dashboard(request):
         if not form.selected_items():
             messages.error(request, 'Choose at least one dish before checkout.')
         elif is_cashier_mode:
-            order, stock_message = create_paid_pos_order(form, menu_items)
-            if order:
-                messages.success(request, f'POS order #{order.pk} paid.')
-                messages.success(request, stock_message)
-                return redirect('restaurant:pos2_dashboard')
-            messages.error(request, stock_message)
+            cashier_action = request.POST.get('cashier_action')
+            if cashier_action == 'send_to_kitchen':
+                order, action_error = send_cashier_pos_order_to_kitchen(form, menu_items)
+                if order:
+                    messages.success(request, f'Order #{order.pk} sent to kitchen.')
+                    return redirect('restaurant:pos2_dashboard')
+                messages.error(request, action_error)
+            else:
+                order, stock_message = create_paid_pos_order(form, menu_items)
+                if order:
+                    messages.success(request, f'POS order #{order.pk} paid.')
+                    messages.success(request, stock_message)
+                    return redirect('restaurant:pos2_dashboard')
+                messages.error(request, stock_message)
         else:
             order = create_order_from_form(form, menu_items, request.user)
             messages.success(request, f'Order #{order.pk} sent to kitchen.')

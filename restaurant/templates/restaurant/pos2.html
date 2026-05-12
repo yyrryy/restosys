@@ -67,7 +67,14 @@
                     <span>Total</span>
                     <strong id="cart-total">0.00</strong>
                 </div>
-                <button type="submit">{% if is_cashier_mode %}Checkout Paid{% else %}A la cuisine{% endif %}</button>
+                {% if is_cashier_mode %}
+                    <div class="pos-actions">
+                        <!-- <button type="submit" name="cashier_action" value="checkout_paid">Checkout Paid</button> -->
+                        <button type="submit" name="cashier_action" value="send_to_kitchen" class="ghost-button">A la cuisine</button>
+                    </div>
+                {% else %}
+                    <button type="submit">A la cuisine</button>
+                {% endif %}
             </aside>
         </form>
     </section>
