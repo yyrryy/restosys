@@ -1,0 +1,142 @@
+[
+  {
+    "Touche d'accès rapide": "20",
+    "name": "viande hachee grille",
+    "plu": "20",
+    "Code": "20",
+    "Type de code-barres": "2",
+    "price": "140",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "21",
+    "name": "merguez grille",
+    "plu": "21",
+    "Code": "21",
+    "Type de code-barres": "2",
+    "price": "140",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "22",
+    "name": "foie  grille",
+    "plu": "22",
+    "Code": "22",
+    "Type de code-barres": "2",
+    "price": "200",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "23",
+    "name": "filet de bouef grille",
+    "plu": "23",
+    "Code": "23",
+    "Type de code-barres": "2",
+    "price": "180",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "24",
+    "name": "steek de bouef grille",
+    "plu": "24",
+    "Code": "24",
+    "Type de code-barres": "2",
+    "price": "180",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "25",
+    "name": "cotelette grille",
+    "plu": "25",
+    "Code": "25",
+    "Type de code-barres": "2",
+    "price": "200",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "26",
+    "name": "testicules reins grille",
+    "plu": "26",
+    "Code": "26",
+    "Type de code-barres": "2",
+    "price": "200",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "27",
+    "name": "viande hachee dinde ou poulet grille",
+    "plu": "27",
+    "Code": "27",
+    "Type de code-barres": "2",
+    "price": "100",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "28",
+    "name": "cuisse de poulet grille",
+    "plu": "28",
+    "Code": "28",
+    "Type de code-barres": "2",
+    "price": "80",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "29",
+    "name": "filet de poulet grille",
+    "plu": "29",
+    "Code": "29",
+    "Type de code-barres": "2",
+    "price": "100",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "30",
+    "name": "Nuggets grille",
+    "plu": "30",
+    "Code": "30",
+    "Type de code-barres": "2",
+    "price": "90",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "31",
+    "name": "Tommat & ognion grille",
+    "plu": "31",
+    "Code": "31",
+    "Type de code-barres": "2",
+    "price": "10",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "32",
+    "name": "Ailes de poulet grille",
+    "plu": "32",
+    "Code": "32",
+    "Type de code-barres": "2",
+    "price": "65",
+    "Unité de poids": "4",
+    "category_id": 13
+  },
+  {
+    "Touche d'accès rapide": "33",
+    "name": "Mixte grille",
+    "plu": "33",
+    "Code": "33",
+    "Type de code-barres": "2",
+    "price": "180",
+    "Unité de poids": "4",
+    "category_id": 13
+  }
+]

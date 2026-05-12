@@ -1,0 +1,2 @@
+exec(open("import_grillade_dishes_shell.py", encoding="utf-8").read())
+exec(open("import_inventory_items_shell.py", encoding="utf-8").read())
