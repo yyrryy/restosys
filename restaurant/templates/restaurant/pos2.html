@@ -4,7 +4,7 @@
 {% block title %}POS 2 | RestoSys{% endblock %}
 
 {% block content %}
-    <header class="topbar">
+    <!-- <header class="topbar">
         <div>
             <p class="eyebrow">{% if is_cashier_mode %}Cashier checkout{% else %}Waiter order entry{% endif %}</p>
             <h1>POS 2</h1>
@@ -14,9 +14,14 @@
         {% else %}
             <a class="button-link" href="{% url 'restaurant:waiter_dashboard' %}">Serveur</a>
         {% endif %}
-    </header>
+    </header> -->
 
     <section class="panel order-panel pos-page-panel">
+        {% if is_cashier_mode %}
+            <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Retour</a>
+        {% else %}
+            <a class="button-link" href="{% url 'restaurant:waiter_dashboard' %}">Retour</a>
+        {% endif %}
         <form class="pos-shell" method="post" id="pos-order-form">
             {% csrf_token %}
             <section class="pos-board">
@@ -31,19 +36,21 @@
                     {% endif %}
                 </div>
 
-                <div class="category-strip" aria-label="Menu categories">
-                    <button class="category-chip" type="button" data-category="all">All</button>
-                    {% for value, label in menu_categories %}
-                        <button class="category-chip" type="button" data-category="{{ value }}">{{ label }}</button>
-                    {% endfor %}
-                </div>
+                <div class="pos-catalog">
+                    <div class="category-strip" aria-label="Menu categories">
+                        <!-- <button class="category-chip" type="button" data-category="all">All</button> -->
+                        {% for value, label in menu_categories %}
+                            <button class="category-chip" type="button" data-category="{{ value }}">{{ label }}</button>
+                        {% endfor %}
+                    </div>
 
-                <div
-                    class="pos-grid"
-                    id="pos-grid"
-                    data-items-url="{% url 'restaurant:pos2_category_items' %}"
-                >
-                    <!-- <p class="empty-state">Select a category to load products.</p> -->
+                    <div
+                        class="pos-grid"
+                        id="pos-grid"
+                        data-items-url="{% url 'restaurant:pos2_category_items' %}"
+                    >
+                        <!-- <p class="empty-state">Select a category to load products.</p> -->
+                    </div>
                 </div>
 
                 <div class="pos-hidden-fields">

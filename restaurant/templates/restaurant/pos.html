@@ -30,32 +30,34 @@
                     {% endif %}
                 </div>
 
-                <div class="category-strip" aria-label="Menu categories">
-                    <button class="category-chip active" type="button" data-category="all">All</button>
-                    {% for value, label in menu_categories %}
-                        <button class="category-chip" type="button" data-category="{{ value }}">{{ label }}</button>
-                    {% endfor %}
-                </div>
+                <div class="pos-catalog">
+                    <div class="category-strip" aria-label="Menu categories">
+                        <button class="category-chip active" type="button" data-category="all">All</button>
+                        {% for value, label in menu_categories %}
+                            <button class="category-chip" type="button" data-category="{{ value }}">{{ label }}</button>
+                        {% endfor %}
+                    </div>
 
-                <div class="pos-grid">
-                    {% for item in menu_items %}
-                        <button
-                            class="dish-tile"
-                            type="button"
-                            data-category="{{ item.category }}"
-                            data-field="id_item_{{ item.id }}"
-                            data-plu="{{ item.plu }}"
-                            data-name="{{ item.name }}"
-                            data-price="{{ item.price }}"
-                        >
-                            <img src="{{ item.display_image }}" alt="{{ item.name }}">
-                            <strong>{{ item.name }}</strong>
-                            <span>{{ item.category }}</span>
-                            <small>{{ item.price }}</small>
-                        </button>
-                    {% empty %}
-                        <p class="empty-state">No available dishes yet. Add dishes from the admin dashboard.</p>
-                    {% endfor %}
+                    <div class="pos-grid">
+                        {% for item in menu_items %}
+                            <button
+                                class="dish-tile"
+                                type="button"
+                                data-category="{{ item.category }}"
+                                data-field="id_item_{{ item.id }}"
+                                data-plu="{{ item.plu }}"
+                                data-name="{{ item.name }}"
+                                data-price="{{ item.price }}"
+                            >
+                                <img src="{{ item.display_image }}" alt="{{ item.name }}">
+                                <strong>{{ item.name }}</strong>
+                                <span>{{ item.category }}</span>
+                                <small>{{ item.price }}</small>
+                            </button>
+                        {% empty %}
+                            <p class="empty-state">No available dishes yet. Add dishes from the admin dashboard.</p>
+                        {% endfor %}
+                    </div>
                 </div>
 
                 <div class="pos-hidden-fields">

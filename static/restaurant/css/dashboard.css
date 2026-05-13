@@ -474,6 +474,13 @@ button {
     min-width: 0;
 }
 
+.pos-catalog {
+    display: grid;
+    grid-template-columns: minmax(140px, 165px) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
 .pos-controls {
     display: grid;
     grid-template-columns: 90px minmax(160px, 1fr) 90px minmax(160px, 1fr);
@@ -494,10 +501,11 @@ button {
 
 .category-strip {
     display: flex;
+    flex-direction: column;
     gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 8px;
+    align-items: stretch;
     margin-bottom: 12px;
+    width: min(165px, 100%);
 }
 
 .category-chip,
@@ -509,7 +517,10 @@ button {
 }
 
 .category-chip {
-    padding: 8px 12px;
+    padding: 7px 10px;
+    width: 100%;
+    text-align: left;
+    font-size: 13px;
 }
 
 .category-chip.active {
@@ -529,13 +540,14 @@ button {
 }
 
 .pos-grid {
+    height: 75vh;
+    overflow: scroll;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 12px;
 }
 
 .dish-tile {
-    min-height: 124px;
     display: grid;
     gap: 8px;
     align-content: start;
@@ -752,6 +764,16 @@ th {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
+}
+
+@media (max-width: 1024px) {
+    .pos-catalog {
+        grid-template-columns: 1fr;
+    }
+
+    .category-strip {
+        margin-bottom: 0;
+    }
 }
 
 input,
