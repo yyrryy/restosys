@@ -96,7 +96,7 @@ def create_order_from_form(form, menu_items, waiter, print_ticket=True):
     return order
 
 
-def create_paid_pos_order(form, menu_items):
+def create_paid_pos_order(form, menu_items, print_ticket=True):
     selected_waiter = form.cleaned_data.get('cashier_waiter')
     order = create_order_from_form(form, menu_items, selected_waiter, print_ticket=False)
     success, stock_message = deduct_order_stock(order)
@@ -105,6 +105,8 @@ def create_paid_pos_order(form, menu_items):
         return None, stock_message
 
     order.status = Order.STATUS_PAID
+    if not print_ticket:
+        order._skip_payment_receipt = True
     order.save(update_fields=['status'])
     if order.table:
         order.table.status = DiningTable.STATUS_AVAILABLE
@@ -346,7 +348,8 @@ def pos_dashboard(request):
                     return redirect('restaurant:pos_dashboard')
                 messages.error(request, action_error)
             else:
-                order, stock_message = create_paid_pos_order(form, menu_items)
+                print_ticket = cashier_action != 'checkout_paid_no_ticket'
+                order, stock_message = create_paid_pos_order(form, menu_items, print_ticket=print_ticket)
                 if order:
                     messages.success(request, f'POS order #{order.pk} paid.')
                     messages.success(request, stock_message)
@@ -395,7 +398,8 @@ def pos2_dashboard(request):
                     return redirect('restaurant:pos2_dashboard')
                 messages.error(request, action_error)
             else:
-                order, stock_message = create_paid_pos_order(form, menu_items)
+                print_ticket = cashier_action != 'checkout_paid_no_ticket'
+                order, stock_message = create_paid_pos_order(form, menu_items, print_ticket=print_ticket)
                 if order:
                     messages.success(request, f'POS order #{order.pk} paid.')
                     messages.success(request, stock_message)
@@ -589,7 +593,7 @@ def cashier_dashboard(request):
         {'label': 'Payés', 'value': Order.objects.filter(status=Order.STATUS_PAID).count()},
         {'label': 'Tables ouvertes', 'value': DiningTable.objects.exclude(status=DiningTable.STATUS_AVAILABLE).count()},
     ]
-    if current_role == UserProfile.ROLE_ADMIN:
+    if current_role == UserProfile.ROLE_ADMIN or current_role == UserProfile.ROLE_OWNER:
         stats.append({'label': 'Argent collecté', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'})
     context = dashboard_context('cashier', request.user)
     context.update({
@@ -629,6 +633,10 @@ def parse_discount_input(discount_raw):
     if discount_amount < 0:
         return None, 'Le montant de remise ne peut pas être négatif.'
     return discount_amount, None
+
+
+def should_print_payment_ticket(request):
+    return request.POST.get('payment_action') != 'pay_without_ticket'
 
 
 def apply_discount_to_orders(orders, discount_amount):
@@ -753,11 +761,14 @@ def pay_table_orders(request, table_id):
         return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
 
     apply_discount_to_orders(orders, discount_amount)
+    print_ticket = should_print_payment_ticket(request)
     collected_total = sum(order.payable_total for order in orders)
     order_refs = ', '.join(f'#{order.id}' for order in orders)
     with transaction.atomic():
         for order in orders:
             order.status = Order.STATUS_PAID
+            if not print_ticket:
+                order._skip_payment_receipt = True
             order.save(update_fields=['status', 'discount_amount'])
 
         record_order_payment_entry(
@@ -1131,6 +1142,8 @@ def update_order_status(request, order_id, status):
                 messages.error(request, discount_error)
                 return redirect(request.POST.get('next') or 'restaurant:dashboard')
             apply_discount_to_orders([order], discount_amount)
+            if not should_print_payment_ticket(request):
+                order._skip_payment_receipt = True
 
         order.status = status
         if status == Order.STATUS_PAID:

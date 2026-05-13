@@ -19,5 +19,6 @@ def capture_previous_order_status(sender, instance, **kwargs):
 def print_payment_receipt_when_order_paid(sender, instance, created, **kwargs):
     previous_status = getattr(instance, '_previous_status', None)
     became_paid = instance.status == Order.STATUS_PAID and (created or previous_status != Order.STATUS_PAID)
-    if became_paid:
+    skip_receipt = getattr(instance, '_skip_payment_receipt', False)
+    if became_paid and not skip_receipt:
         dispatch_payment_receipt(instance.pk)

@@ -99,7 +99,10 @@
                 <p class="purchase-selected"><strong>Rendu:</strong> <span id="drawer-change-result">0.00</span></p>
                 <p class="purchase-selected" id="drawer-change-note">.</p>
             </div>
-            <button type="submit" style="margin-top: 5px; width: 100%;">Payer</button>
+            <div class="pos-actions spacing-top">
+                <button type="submit" name="payment_action" value="pay_with_ticket" style="width: 100%;">Payer</button>
+                <button type="submit" name="payment_action" value="pay_without_ticket" class="ghost-button" style="width: 100%;">Payer sans ticket</button>
+            </div>
         </form>
 
     </aside>
