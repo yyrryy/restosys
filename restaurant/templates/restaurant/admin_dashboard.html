@@ -94,9 +94,15 @@
     <section class="content-grid">
         <article class="panel">
             <div class="panel-heading"><h2>Menu</h2></div>
-            <table>
+            <input
+                id="menu-search-input"
+                type="search"
+                placeholder="Rechercher un repas, catégorie ou composant..."
+                aria-label="Rechercher dans les éléments du menu"
+            >
+            <table id="menu-items-table" class="spacing-top">
                 <thead><tr><th>Repas</th><th>Catégorie</th><th>prix</th><th>Image</th><th>Components</th><th>Available</th><th>Action</th></tr></thead>
-                <tbody>
+                <tbody id="menu-items-body">
                     {% for item in menu_items %}
                         <tr>
                             <td>{{ item.name }}</td>
@@ -193,6 +199,33 @@
         const initialPanel = document.querySelector('.form-panel:not([hidden])');
         if (initialPanel) {
             showPanel(initialPanel.id);
+        }
+
+        const menuSearchInput = document.getElementById('menu-search-input');
+        const menuRows = Array.from(document.querySelectorAll('#menu-items-body tr'));
+        const noItemsRow = document.querySelector('#menu-items-body tr td[colspan="7"]');
+
+        if (menuSearchInput && menuRows.length) {
+            menuSearchInput.addEventListener('input', function () {
+                const query = this.value.trim().toLowerCase();
+                let visibleRowsCount = 0;
+
+                menuRows.forEach((row) => {
+                    if (row.querySelector('td[colspan]')) {
+                        return;
+                    }
+                    const rowText = row.textContent.toLowerCase();
+                    const visible = !query || rowText.includes(query);
+                    row.hidden = !visible;
+                    if (visible) {
+                        visibleRowsCount += 1;
+                    }
+                });
+
+                if (noItemsRow) {
+                    noItemsRow.parentElement.hidden = visibleRowsCount !== 0;
+                }
+            });
         }
     })();
 </script>

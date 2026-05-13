@@ -217,7 +217,7 @@ def _kitchen_ticket_lines(order):
         'GRILLADE LE GOUT: à la cuisine',
         '==========================================',
         f'KITCHEN ORDER #{order.id}',
-        # f'Table: {table_name}',
+        f'Table: {table_name}',
         # f'Waiter: {waiter_name}',
         f'Time: {order.date.strftime("%Y-%m-%d %H:%M:%S")}',
         '------------------------------------------',
