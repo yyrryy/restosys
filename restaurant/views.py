@@ -782,7 +782,12 @@ def cashier_print_receipt(request, order_id):
         return JsonResponse({'ok': False, 'message': 'Méthode non autorisée.'}, status=405)
 
     order = get_object_or_404(Order, pk=order_id)
-    dispatch_kitchen_ticket(order.pk)
+    success, error_message = dispatch_kitchen_ticket(order.pk)
+    if not success:
+        return JsonResponse(
+            {'ok': False, 'message': error_message or f'Échec de l’impression pour la commande #{order.pk}.'},
+            status=500,
+        )
     return JsonResponse({'ok': True, 'message': f'Impression du ticket lancée pour la commande #{order.pk}.'})
 
 

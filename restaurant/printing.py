@@ -16,6 +16,9 @@ except ImportError:  # pragma: no cover - depends on host OS/runtime
 
 
 def _printer_name():
+    configured = getattr(settings, 'THERMAL_PRINTER_NAME', '').strip()
+    if configured:
+        return configured
     return 'XP-80C'
 
 
@@ -356,12 +359,16 @@ def print_payment_receipt(order_id):
 def dispatch_kitchen_ticket(order_id):
     try:
         print_kitchen_ticket(order_id)
-    except Exception:
+        return True, None
+    except Exception as exc:
         logger.exception('Kitchen thermal printing failed for order #%s.', order_id)
+        return False, str(exc)
 
 
 def dispatch_payment_receipt(order_id):
     try:
         print_payment_receipt(order_id)
-    except Exception:
+        return True, None
+    except Exception as exc:
         logger.exception('Payment receipt printing failed for order #%s.', order_id)
+        return False, str(exc)
