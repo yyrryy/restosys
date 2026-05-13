@@ -39,6 +39,14 @@
                 {% elif cashier_actions %}
                     <td class="action-cell">
                         <button type="button" class="ghost-button cashier-details-trigger" data-order-id="{{ order.id }}" {% if order.table_id %}data-table-id="{{ order.table_id }}"{% endif %}>Détails</button>
+                        <button
+                            type="button"
+                            class="ghost-button cashier-print-trigger"
+                            data-print-url="{% url 'restaurant:cashier_print_receipt' order.id %}"
+                            data-order-id="{{ order.id }}"
+                        >
+                            Print
+                        </button>
                         <!-- {% if order.status == 'ready' or order.status == 'served' %}
                         {% else %}
                         En cuisine

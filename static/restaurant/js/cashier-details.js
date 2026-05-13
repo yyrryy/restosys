@@ -37,6 +37,32 @@
         return Number(value || 0).toFixed(2);
     }
 
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+            return parts.pop().split(';').shift();
+        }
+        return '';
+    }
+
+    function showMessage(type, text) {
+        let messagesBox = document.querySelector('.messages');
+        if (!messagesBox) {
+            messagesBox = document.createElement('div');
+            messagesBox.className = 'messages';
+            const workspace = document.querySelector('.workspace');
+            if (!workspace) {
+                return;
+            }
+            workspace.prepend(messagesBox);
+        }
+        const message = document.createElement('p');
+        message.className = `message ${type}`;
+        message.textContent = text;
+        messagesBox.prepend(message);
+    }
+
     function updateDiscountDisplay() {
         const subtotal = Number(subtotalEl.dataset.value || 0);
         const parsedValue = Number(discountInput.value);
@@ -166,6 +192,32 @@
             return;
         }
         fetchDetails(button.dataset.orderId);
+    });
+
+    $(document).on('click', '.cashier-print-trigger', function () {
+        const button = this;
+        const printUrl = button.dataset.printUrl;
+        const orderId = button.dataset.orderId;
+        if (!printUrl) {
+            showMessage('error', 'URL d’impression introuvable.');
+            return;
+        }
+        button.disabled = true;
+        $.ajax({
+            url: printUrl,
+            type: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            data: { order_id: orderId },
+        }).done(function (response) {
+            showMessage('success', response.message || `Impression lancée pour la commande #${orderId}.`);
+        }).fail(function (xhr) {
+            const message = xhr.responseJSON && xhr.responseJSON.message
+                ? xhr.responseJSON.message
+                : `Échec de l'impression pour la commande #${orderId}.`;
+            showMessage('error', message);
+        }).always(function () {
+            button.disabled = false;
+        });
     });
 
     billGrid.addEventListener('click', function (event) {

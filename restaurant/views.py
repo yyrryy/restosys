@@ -26,7 +26,7 @@ from .forms import (
     SupplierForm,
 )
 from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, Supplier, UserProfile, Scalbarcodescan
-from .printing import dispatch_kitchen_ticket
+from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt
 
 
 def user_role(user):
@@ -760,6 +760,17 @@ def pay_table_orders(request, table_id):
 
     messages.success(request, f'Paiement de la table {table} enregistré pour {len(orders)} commande(s).')
     return redirect(request.POST.get('next') or 'restaurant:cashier_dashboard')
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def cashier_print_receipt(request, order_id):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'message': 'Méthode non autorisée.'}, status=405)
+
+    order = get_object_or_404(Order, pk=order_id)
+    dispatch_kitchen_ticket(order.pk)
+    return JsonResponse({'ok': True, 'message': f'Impression du ticket lancée pour la commande #{order.pk}.'})
 
 
 @login_required
