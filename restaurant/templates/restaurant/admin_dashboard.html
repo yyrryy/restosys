@@ -8,7 +8,7 @@
             <p class="eyebrow">Admin workspace</p>
             <h1>Restaurant setup</h1>
         </div>
-        <a class="button-link" href="{% url 'restaurant:suppliers_dashboard' %}">Suppliers</a>
+        <a class="button-link" href="{% url 'restaurant:suppliers_dashboard' %}">Fournisseurs</a>
     </header>
 
     <section class="stats-grid">
@@ -20,68 +20,82 @@
         {% endfor %}
     </section>
 
-    <section class="three-grid">
-        <article class="panel">
-            <div class="panel-heading"><h2>Add table</h2></div>
-            <form class="stack-form" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="form_type" value="table">
-                {{ forms.table.as_p }}
-                <button type="submit">Save Table</button>
-            </form>
-        </article>
-        <article class="panel">
-            <div class="panel-heading"><h2>Add dish</h2></div>
-            <form class="stack-form" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="hidden" name="form_type" value="menu">
-                {{ forms.menu.as_p }}
-                <button type="submit">Save Dish</button>
-            </form>
-        </article>
-        <article class="panel">
-            <div class="panel-heading"><h2>Add product</h2></div>
-            <form class="stack-form" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="form_type" value="inventory">
-                {{ forms.inventory.as_p }}
-                <button type="submit">Save Product</button>
-            </form>
-        </article>
-        <article class="panel">
-            <div class="panel-heading"><h2>Add dish component</h2></div>
-            <form class="stack-form" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="form_type" value="component">
-                {{ forms.component.as_p }}
-                <button type="submit">Save Component</button>
-            </form>
-        </article>
-        <article class="panel">
-            <div class="panel-heading"><h2>Add category</h2></div>
-            <form class="stack-form" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="form_type" value="category">
-                {{ forms.category.as_p }}
-                <button type="submit">Save Category</button>
-            </form>
-        </article>
-        <article class="panel">
-            <div class="panel-heading"><h2>Add user & role</h2></div>
-            <form class="stack-form" method="post">
-                {% csrf_token %}
-                <input type="hidden" name="form_type" value="user">
-                {{ forms.user.as_p }}
-                <button type="submit">Save User</button>
-            </form>
-        </article>
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Add data</h2>
+        </div>
+        <div class="button-row" role="tablist" aria-label="Admin data forms">
+            <button class="ghost-button form-toggle" type="button" data-target="table-form" aria-controls="table-form" aria-pressed="false">Table</button>
+            <button class="ghost-button form-toggle" type="button" data-target="menu-form" aria-controls="menu-form" aria-pressed="false">Repas</button>
+            <button class="ghost-button form-toggle" type="button" data-target="inventory-form" aria-controls="inventory-form" aria-pressed="false">Produit</button>
+            <button class="ghost-button form-toggle" type="button" data-target="component-form" aria-controls="component-form" aria-pressed="false">Composant</button>
+            <button class="ghost-button form-toggle" type="button" data-target="category-form" aria-controls="category-form" aria-pressed="false">Catégorie</button>
+            <button class="ghost-button form-toggle" type="button" data-target="user-form" aria-controls="user-form" aria-pressed="false">Utilisateur & Rôle</button>
+        </div>
+
+        <div class="stack-form-group">
+            <article class="panel form-panel" id="table-form" {% if active_form_type != 'table' %}hidden{% endif %}>
+                <div class="panel-heading"><h3>Add table</h3></div>
+                <form class="stack-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="table">
+                    {{ forms.table.as_p }}
+                    <button type="submit">Save Table</button>
+                </form>
+            </article>
+            <article class="panel form-panel" id="menu-form" {% if active_form_type != 'menu' %}hidden{% endif %}>
+                <div class="panel-heading"><h3>Add dish</h3></div>
+                <form class="stack-form" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="menu">
+                    {{ forms.menu.as_p }}
+                    <button type="submit">Save Dish</button>
+                </form>
+            </article>
+            <article class="panel form-panel" id="inventory-form" {% if active_form_type != 'inventory' %}hidden{% endif %}>
+                <div class="panel-heading"><h3>Add product</h3></div>
+                <form class="stack-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="inventory">
+                    {{ forms.inventory.as_p }}
+                    <button type="submit">Save Product</button>
+                </form>
+            </article>
+            <article class="panel form-panel" id="component-form" {% if active_form_type != 'component' %}hidden{% endif %}>
+                <div class="panel-heading"><h3>Ajouter des composants</h3></div>
+                <form class="stack-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="component">
+                    {{ forms.component.as_p }}
+                    <button type="submit">Enregistrer</button>
+                </form>
+            </article>
+            <article class="panel form-panel" id="category-form" {% if active_form_type != 'category' %}hidden{% endif %}>
+                <div class="panel-heading"><h3>Ajouter une catégorie</h3></div>
+                <form class="stack-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="category">
+                    {{ forms.category.as_p }}
+                    <button type="submit">Enregistrer la catégorie</button>
+                </form>
+            </article>
+            <article class="panel form-panel" id="user-form" {% if active_form_type != 'user' %}hidden{% endif %}>
+                <div class="panel-heading"><h3>Ajouter un utilisateur et un rôle</h3></div>
+                <form class="stack-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="user">
+                    {{ forms.user.as_p }}
+                    <button type="submit">Enregistrer l'utilisateur</button>
+                </form>
+            </article>
+        </div>
     </section>
 
     <section class="content-grid">
         <article class="panel">
             <div class="panel-heading"><h2>Menu</h2></div>
             <table>
-                <thead><tr><th>Dish</th><th>Category</th><th>Price</th><th>Image</th><th>Components</th><th>Available</th><th>Action</th></tr></thead>
+                <thead><tr><th>Repas</th><th>Catégorie</th><th>prix</th><th>Image</th><th>Components</th><th>Available</th><th>Action</th></tr></thead>
                 <tbody>
                     {% for item in menu_items %}
                         <tr>
@@ -152,4 +166,34 @@
             </table>
         </article>
     </section>
+{% endblock %}
+
+{% block js %}
+<script>
+    (function () {
+        const buttons = document.querySelectorAll('.form-toggle');
+        const panels = document.querySelectorAll('.form-panel');
+
+        function showPanel(targetId) {
+            panels.forEach((panel) => {
+                panel.hidden = panel.id !== targetId;
+            });
+            buttons.forEach((button) => {
+                button.classList.toggle('active', button.dataset.target === targetId);
+                button.setAttribute('aria-pressed', button.dataset.target === targetId ? 'true' : 'false');
+            });
+        }
+
+        buttons.forEach((button) => {
+            button.addEventListener('click', function () {
+                showPanel(this.dataset.target);
+            });
+        });
+
+        const initialPanel = document.querySelector('.form-panel:not([hidden])');
+        if (initialPanel) {
+            showPanel(initialPanel.id);
+        }
+    })();
+</script>
 {% endblock %}

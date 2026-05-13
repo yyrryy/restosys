@@ -194,6 +194,7 @@ def owner_dashboard(request):
 @role_required(UserProfile.ROLE_ADMIN)
 def admin_dashboard(request):
     User = get_user_model()
+    users = list(User.objects.select_related('profile').order_by('username'))
     forms = {
         'table': DiningTableForm(prefix='table'),
         'menu': MenuItemForm(prefix='menu'),
@@ -202,9 +203,11 @@ def admin_dashboard(request):
         'category': MenuCategoryForm(prefix='category'),
         'user': AdminUserCreateForm(prefix='user'),
     }
+    active_form_type = None
 
     if request.method == 'POST':
         form_type = request.POST.get('form_type')
+        active_form_type = form_type
         if form_type in forms:
             form_class = {
                 'table': DiningTableForm,
@@ -226,7 +229,17 @@ def admin_dashboard(request):
         'forms': forms,
         'tables': DiningTable.objects.all(),
         'categories': MenuCategory.objects.all(),
-        'users': User.objects.select_related('profile').order_by('username'),
+        'users': users,
+        'users_with_roles': [
+            {
+                'username': user.username,
+                'full_name': user.get_full_name(),
+                'email': user.email,
+                'role': getattr(getattr(user, 'profile', None), 'get_role_display', lambda: '-')(),
+            }
+            for user in users
+        ],
+        'active_form_type': active_form_type,
         'menu_items': MenuItem.objects.prefetch_related('components__inventory_item'),
         'inventory_items': InventoryItem.objects.all(),
         'stats': [
