@@ -16,9 +16,6 @@ except ImportError:  # pragma: no cover - depends on host OS/runtime
 
 
 def _printer_name():
-    configured = getattr(settings, 'THERMAL_PRINTER_NAME', '').strip()
-    if configured:
-        return configured
     return 'XP-80C'
 
 
