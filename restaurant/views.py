@@ -23,9 +23,10 @@ from .forms import (
     OrderCreateForm,
     PurchaseForm,
     RecipeComponentForm,
+    RecipeComponentFormSet,
     SupplierForm,
 )
-from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, Supplier, UserProfile, Scalbarcodescan
+from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile, Scalbarcodescan
 from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt
 
 
@@ -259,20 +260,129 @@ def admin_dashboard(request):
 @role_required(UserProfile.ROLE_ADMIN)
 def menu_item_history(request, item_id):
     menu_item = get_object_or_404(MenuItem, pk=item_id)
-    item_form = MenuItemForm(instance=menu_item, prefix='menu_item')
+    
     if request.method == 'POST':
         item_form = MenuItemForm(request.POST, request.FILES, instance=menu_item, prefix='menu_item')
         if item_form.is_valid():
             item_form.save()
             messages.success(request, f'Article "{menu_item.name}" mis à jour avec succès.')
             return redirect('restaurant:menu_item_history', item_id=menu_item.id)
+        else:
+            for field, errors in item_form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        item_form = MenuItemForm(instance=menu_item, prefix='menu_item')
 
     context = dashboard_context('admin', request.user)
     context.update({
         'menu_item': menu_item,
         'item_form': item_form,
+        'all_inventory_items': InventoryItem.objects.all(),
     })
     return render(request, 'restaurant/menu_item_history.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def add_component(request, item_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    menu_item = get_object_or_404(MenuItem, pk=item_id)
+    inventory_item_id = request.POST.get('inventory_item_id')
+    quantity = request.POST.get('quantity')
+    
+    if not inventory_item_id or not quantity:
+        return JsonResponse({'error': 'Missing required fields'}, status=400)
+    
+    try:
+        quantity = float(quantity)
+        inventory_item = get_object_or_404(InventoryItem, pk=inventory_item_id)
+        
+        # Check if already exists
+        existing = RecipeComponent.objects.filter(
+            menu_item=menu_item,
+            inventory_item=inventory_item
+        ).first()
+        
+        if existing:
+            return JsonResponse({'error': 'This component already exists'}, status=400)
+        
+        component = RecipeComponent.objects.create(
+            menu_item=menu_item,
+            inventory_item=inventory_item,
+            quantity=quantity
+        )
+        
+        return JsonResponse({
+            'id': component.id,
+            'name': inventory_item.name,
+            'quantity': quantity,
+            'unit': inventory_item.unit
+        })
+    except (ValueError, InventoryItem.DoesNotExist):
+        return JsonResponse({'error': 'Invalid data'}, status=400)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def update_component(request, item_id, component_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    menu_item = get_object_or_404(MenuItem, pk=item_id)
+    component = get_object_or_404(RecipeComponent, pk=component_id, menu_item=menu_item)
+    
+    quantity = request.POST.get('quantity')
+    
+    if not quantity:
+        return JsonResponse({'error': 'Missing quantity'}, status=400)
+    
+    try:
+        quantity = float(quantity)
+        component.quantity = quantity
+        component.save()
+        
+        return JsonResponse({
+            'id': component.id,
+            'quantity': quantity
+        })
+    except ValueError:
+        return JsonResponse({'error': 'Invalid quantity'}, status=400)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def delete_component(request, item_id, component_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    menu_item = get_object_or_404(MenuItem, pk=item_id)
+    component = get_object_or_404(RecipeComponent, pk=component_id, menu_item=menu_item)
+    
+    component.delete()
+    
+    return JsonResponse({'success': True})
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def get_components(request, item_id):
+    menu_item = get_object_or_404(MenuItem, pk=item_id)
+    components = menu_item.components.all()
+    
+    data = []
+    for comp in components:
+        data.append({
+            'id': comp.id,
+            'inventory_item_id': comp.inventory_item.id,
+            'name': comp.inventory_item.name,
+            'quantity': comp.quantity,
+            'unit': comp.inventory_item.unit
+        })
+    
+    return JsonResponse({'components': data})
 
 
 @login_required
@@ -1128,14 +1238,15 @@ def update_order_status(request, order_id, status):
         if status in cashier_status and role not in {UserProfile.ROLE_CASHIER, UserProfile.ROLE_OWNER}:
             messages.error(request, 'Seuls les comptes caisse peuvent marquer une commande comme payée.')
             return redirect(request.POST.get('next') or 'restaurant:dashboard')
-        if status == Order.STATUS_READY and order.status != Order.STATUS_PREPARING:
-            success, stock_message = deduct_order_stock(order)
-            if not success:
-                messages.error(request, stock_message)
-                return redirect(request.POST.get('next') or 'restaurant:dashboard')
+        # if status == Order.STATUS_READY and order.status != Order.STATUS_PREPARING:
+        #     success, stock_message = deduct_order_stock(order)
+        #     if not success:
+        #         messages.error(request, stock_message)
+        #         return redirect(request.POST.get('next') or 'restaurant:dashboard')
             
         was_paid = order.status == Order.STATUS_PAID
         if status == Order.STATUS_PAID:
+            success, stock_message = deduct_order_stock(order)
             discount_raw = request.POST.get('discount_amount', '').strip()
             discount_amount, discount_error = parse_discount_input(discount_raw)
             if discount_error:

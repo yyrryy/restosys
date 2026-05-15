@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.forms import BaseFormSet, formset_factory
+from django.forms import BaseFormSet, BaseModelFormSet, formset_factory, modelformset_factory
 from django.contrib.auth import get_user_model
 
 from .models import CashDeskEntry, DiningTable, InventoryItem, MenuCategory, MenuItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
@@ -61,7 +61,52 @@ class MenuCategoryForm(forms.ModelForm):
 class RecipeComponentForm(forms.ModelForm):
     class Meta:
         model = RecipeComponent
-        fields = ['menu_item', 'inventory_item', 'quantity']
+        fields = ['inventory_item', 'quantity']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['inventory_item'].label = 'Composant'
+        self.fields['inventory_item'].required = False  # Allow empty forms
+        self.fields['quantity'].label = 'Quantité'
+        self.fields['quantity'].required = False  # Allow empty forms
+
+
+class BaseRecipeComponentFormSet(BaseModelFormSet):
+    def clean(self):
+        # Check for empty forms to skip model validation on them
+        if any(self.errors):
+            return
+        
+        seen_items = set()
+        for form in self.forms:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+            if form.cleaned_data.get('DELETE'):
+                continue
+            
+            inventory_item = form.cleaned_data.get('inventory_item')
+            
+            # Skip empty forms
+            if not inventory_item:
+                continue
+            
+            # Check quantity is provided
+            if not form.cleaned_data.get('quantity'):
+                raise forms.ValidationError('Quantité est requise lorsque un article est sélectionné.')
+            
+            # Check for duplicates within the formset
+            if inventory_item.id in seen_items:
+                raise forms.ValidationError('Un article ne peut pas être utilisé deux fois.')
+            seen_items.add(inventory_item.id)
+
+
+RecipeComponentFormSet = modelformset_factory(
+    RecipeComponent,
+    form=RecipeComponentForm,
+    formset=BaseRecipeComponentFormSet,
+    extra=0,
+    can_delete=True,
+)
 
 
 class OrderCreateForm(forms.Form):

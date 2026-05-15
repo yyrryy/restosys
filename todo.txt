@@ -1,1 +1,4 @@
-payer should be with or without ticket
+payer should be with or without ticket..
+multiple products in composants
+caisse historique for a day
+mise a jour supplier situation
