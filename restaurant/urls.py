@@ -17,6 +17,7 @@ urlpatterns = [
     path('menu/<int:item_id>/components/<int:component_id>/update/', views.update_component, name='update_component'),
     path('menu/<int:item_id>/components/<int:component_id>/delete/', views.delete_component, name='delete_component'),
     path('inventory/', views.inventory_dashboard, name='inventory_dashboard'),
+    path('inventory/search-items/', views.inventory_item_search, name='inventory_item_search'),
     path('inventory/<int:item_id>/history/', views.inventory_item_history, name='inventory_item_history'),
     path('pos/', views.pos2_dashboard, name='pos_dashboard'),
     path('pos2/', views.pos2_dashboard, name='pos2_dashboard'),

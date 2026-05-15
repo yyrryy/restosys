@@ -23,8 +23,16 @@
     <section class="panel">
         <div class="panel-heading">
             <h2>Stock list</h2>
+            <div style="margin-top: 1rem;">
+                <input 
+                    type="text" 
+                    id="inventorySearch" 
+                    placeholder="Search products..." 
+                    style="padding: 0.5rem; width: 300px; border: 1px solid #ccc; border-radius: 4px;"
+                >
+            </div>
         </div>
-        <table>
+        <table id="inventoryTable">
             <thead>
                 <tr>
                     <th>Product</th>
@@ -36,7 +44,7 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="inventoryTableBody">
                 {% for item in inventory_items %}
                     <tr>
                         <td>{{ item.name }}</td>
@@ -62,11 +70,63 @@
                         </td>
                     </tr>
                 {% empty %}
-                    <tr>
+                    <tr id="noResultsRow">
                         <td colspan="7">No stock products yet. Add products from the admin dashboard.</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     </section>
+
+    <script>
+        const searchInput = document.getElementById('inventorySearch');
+        const tableBody = document.getElementById('inventoryTableBody');
+        const noResultsRow = document.getElementById('noResultsRow');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (query.length === 0) {
+                // Reset to show all items
+                location.reload();
+                return;
+            }
+
+            // Make AJAX request
+            fetch(`{% url 'restaurant:inventory_item_search' %}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    tableBody.innerHTML = '';
+                    const results = data.results;
+
+                    if (results.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="7">No products found.</td></tr>';
+                        return;
+                    }
+
+                    results.forEach(item => {
+                        const row = document.createElement('tr');
+                        const statusClass = item.needs_reorder ? 'status-low' : 'status-ready';
+                        const statusText = item.needs_reorder ? 'Low stock' : 'In stock';
+                        
+                        row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td>${parseFloat(item.quantity).toFixed(2)}</td>
+                            <td>${item.unit}</td>
+                            <td>${item.reorder_level}</td>
+                            <td><span class="status ${statusClass}">${statusText}</span></td>
+                            <td>Not used yet</td>
+                            <td class="action-cell">
+                                <a class="ghost-button" href="/inventory/${item.id}/history/">History</a>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching search results:', error);
+                    tableBody.innerHTML = '<tr><td colspan="7">Error fetching results.</td></tr>';
+                });
+        });
+    </script>
 {% endblock %}

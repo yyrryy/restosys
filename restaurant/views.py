@@ -395,7 +395,7 @@ def inventory_dashboard(request):
         'stats': [
             {'label': 'Products', 'value': inventory_items.count()},
             {'label': 'Low stock', 'value': len([item for item in inventory_items if item.needs_reorder])},
-            {'label': 'Total quantity', 'value': sum(item.quantity for item in inventory_items)},
+            # {'label': 'Total quantity', 'value': sum(item.quantity for item in inventory_items)},
             {'label': 'Recipe links', 'value': sum(item.recipe_components.count() for item in inventory_items)},
         ],
     })
@@ -876,6 +876,7 @@ def pay_table_orders(request, table_id):
     order_refs = ', '.join(f'#{order.id}' for order in orders)
     with transaction.atomic():
         for order in orders:
+            success, stock_message = deduct_order_stock(order)
             order.status = Order.STATUS_PAID
             if not print_ticket:
                 order._skip_payment_receipt = True
@@ -1072,6 +1073,25 @@ def purchase_item_search(request):
         return JsonResponse({'results': []})
     items = InventoryItem.objects.filter(name__icontains=query).values('id', 'name', 'unit')[:15]
     return JsonResponse({'results': list(items)})
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def inventory_item_search(request):
+    query = request.GET.get('q', '').strip()
+    if len(query) < 1:
+        return JsonResponse({'results': []})
+    items = InventoryItem.objects.filter(
+        name__icontains=query
+    ).values('id', 'name', 'quantity', 'unit', 'reorder_level').order_by('name')[:20]
+    items_list = []
+    for item in items:
+        items_list.append({
+            **item,
+            'needs_reorder': item['quantity'] < item['reorder_level'],
+            'status': 'Low stock' if item['quantity'] < item['reorder_level'] else 'In stock',
+        })
+    return JsonResponse({'results': items_list})
 
 
 def parse_purchase_lines(raw_lines):
