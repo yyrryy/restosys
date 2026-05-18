@@ -35,6 +35,7 @@ urlpatterns = [
     path('cashier/tables/<int:table_id>/details/', views.cashier_table_details, name='cashier_table_details'),
     path('cashier/tables/<int:table_id>/pay/', views.pay_table_orders, name='pay_table_orders'),
     path('cashier/cash-desk/', views.cash_desk_dashboard, name='cash_desk_dashboard'),
+    path('cashier/cash-desk/supplier-payment/', views.cash_desk_supplier_payment, name='cash_desk_supplier_payment'),
     path('cashier/scanner/', views.cashier_barcode_scanner, name='cashier_barcode_scanner'),
     path('orders/<int:order_id>/<str:status>/', views.update_order_status, name='update_order_status'),
 ]

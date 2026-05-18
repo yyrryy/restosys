@@ -1017,6 +1017,7 @@ def cash_desk_dashboard(request):
     cash_collected_from_orders = Order.objects.filter(status=Order.STATUS_PAID)[:50]
     context.update({
         'form': form,
+        'suppliers': Supplier.objects.all(),
         'entries': entries[:100],
         "cash_collected_from_orders": cash_collected_from_orders,
         'stats': [
@@ -1027,6 +1028,50 @@ def cash_desk_dashboard(request):
         ],
     })
     return render(request, 'restaurant/cash_desk_dashboard.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_CASHIER)
+def cash_desk_supplier_payment(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST request required.'}, status=405)
+
+    supplier_id = request.POST.get('supplier_id', '').strip()
+    amount_raw = request.POST.get('amount', '').strip()
+    note = request.POST.get('note', '').strip()
+
+    if not supplier_id:
+        return JsonResponse({'ok': False, 'error': 'Select a supplier.'}, status=400)
+    try:
+        amount = float(amount_raw)
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'Amount must be a valid number.'}, status=400)
+
+    if amount <= 0:
+        return JsonResponse({'ok': False, 'error': 'Amount must be greater than zero.'}, status=400)
+
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
+    reason = f'Paiement fournisseur: {supplier.name}'
+    if note:
+        reason = f'{reason} - {note}'
+
+    entry = CashDeskEntry.objects.create(
+        entry_type=CashDeskEntry.TYPE_OUT,
+        amount=amount,
+        reason=reason,
+        created_by=request.user,
+    )
+    return JsonResponse({
+        'ok': True,
+        'message': f'Paiement fournisseur enregistré pour {supplier.name}.',
+        'entry': {
+            'date': entry.date.strftime('%Y-%m-%d %H:%M'),
+            'entry_type': entry.get_entry_type_display(),
+            'amount': float(entry.amount),
+            'reason': entry.reason or '-',
+            'created_by': entry.created_by.username if entry.created_by else '-',
+        },
+    })
 
 
 def parse_scale_barcode(barcode):
