@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import datetime, timezone
 import json
 from functools import wraps
 from multiprocessing import context
@@ -694,17 +694,18 @@ def cashier_dashboard(request):
         .order_by('date')
     )
     payable_orders = Order.objects.filter(status__in=payable_statuses).prefetch_related('items__menu_item', 'table')
-    paid_orders_queryset = Order.objects.filter(status=Order.STATUS_PAID).prefetch_related('items__menu_item', 'table')
+    # paid_orders_queryset: fetch only today's orderes type object 'datetime.timezone' has no attribute 'now'
+    paid_orders_queryset = Order.objects.filter(status=Order.STATUS_PAID, date__date=datetime.now().date()).prefetch_related('items__menu_item', 'table')
     paid_orders = paid_orders_queryset[:20]
     cash_collected = sum(order.payable_total for order in paid_orders_queryset)
     current_role = user_role(request.user)
     stats = [
         {'label': 'Payment en attend', 'value': payable_orders.count()},
         {'label': 'Payés', 'value': Order.objects.filter(status=Order.STATUS_PAID).count()},
-        {'label': 'Tables ouvertes', 'value': DiningTable.objects.exclude(status=DiningTable.STATUS_AVAILABLE).count()},
+        {'label': 'Tables occupée', 'value': DiningTable.objects.exclude(status=DiningTable.STATUS_AVAILABLE).count()},
     ]
     if current_role == UserProfile.ROLE_ADMIN or current_role == UserProfile.ROLE_OWNER:
-        stats.append({'label': 'Argent collecté', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'})
+        stats.append({'label': 'Argent collecté Aujourd-hui', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'})
     context = dashboard_context('cashier', request.user)
     context.update({
         'stats': stats,
