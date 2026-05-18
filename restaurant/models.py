@@ -185,6 +185,21 @@ class InventoryHistory(models.Model):
         return f'{self.inventory_item} {self.quantity_change} ({self.source})'
 
 
+class Stockout(models.Model):
+    inventory_item = models.ForeignKey(InventoryItem, related_name='stockouts', on_delete=models.CASCADE)
+    quantity = models.FloatField(default=0, null=True, blank=True)
+    reason = models.CharField(max_length=220, blank=True)
+    reference = models.CharField(max_length=120, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='stockouts_created', on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date']
+
+    def __str__(self):
+        return f'{self.inventory_item} stockout {self.quantity}'
+
+
 class RecipeComponent(models.Model):
     menu_item = models.ForeignKey(MenuItem, related_name='components', on_delete=models.CASCADE)
     inventory_item = models.ForeignKey(InventoryItem, related_name='recipe_components', on_delete=models.PROTECT)

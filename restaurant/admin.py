@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile
+from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Stockout, Supplier, UserProfile
 
 
 @admin.register(UserProfile)
@@ -61,6 +61,13 @@ class InventoryHistoryAdmin(admin.ModelAdmin):
     list_display = ('inventory_item', 'source', 'quantity_change', 'quantity_before', 'quantity_after', 'reference', 'created_by', 'date')
     list_filter = ('source', 'date')
     search_fields = ('inventory_item__name', 'barcode', 'reference')
+
+
+@admin.register(Stockout)
+class StockoutAdmin(admin.ModelAdmin):
+    list_display = ('inventory_item', 'quantity', 'reason', 'reference', 'created_by', 'date')
+    list_filter = ('date',)
+    search_fields = ('inventory_item__name', 'reason', 'reference')
 
 
 @admin.register(Supplier)

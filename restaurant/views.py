@@ -26,7 +26,7 @@ from .forms import (
     RecipeComponentFormSet,
     SupplierForm,
 )
-from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Supplier, UserProfile, Scalbarcodescan
+from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Scalbarcodescan, Stockout, Supplier, UserProfile
 from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt
 
 
@@ -416,14 +416,39 @@ def inventory_item_history(request, item_id):
 
     out_from_scal = Scalbarcodescan.objects.filter(inventory_item=inventory_item)
     out_from_orders = OrderItem.objects.filter(menu_item__components__inventory_item=inventory_item, order__status=Order.STATUS_SERVED)
+    out_from_manual = Stockout.objects.filter(inventory_item=inventory_item)
     in_from_purchases = PurchaseItem.objects.filter(inventory_item=inventory_item)
-    outs = list(out_from_scal) + list(out_from_orders)
-    
-    # outs = sorted(
-    #         list(out_from_scal) + list(out_from_orders),
-    #         key=lambda x: getattr(x, 'scanned_at', None) or getattr(x.order, 'date', None) or timezone.now(),
-    #         reverse=True
-    #     )
+
+    outs = []
+    for entry in out_from_scal:
+        outs.append({
+            'date': entry.date,
+            'quantity': entry.weight,
+            'source': 'Scale barcode scan',
+            'reference': entry.barcode,
+        })
+
+    for entry in out_from_orders:
+        outs.append({
+            'date': entry.order.date,
+            'quantity': entry.quantity,
+            'source': 'Dish order recipe',
+            'reference': f'Order #{entry.order.id} - {entry.menu_item.name}',
+        })
+
+    for entry in out_from_manual:
+        outs.append({
+            'date': entry.date,
+            'quantity': entry.quantity,
+            'source': 'Manual out',
+            'reference': entry.reference or entry.reason or '-',
+        })
+
+    outs.sort(
+        key=lambda entry: entry.get('date') or datetime.now(timezone.utc),
+        reverse=True,
+    )
+
     context = {
         'inventory_item': inventory_item,
         'item_form': item_form,
@@ -431,6 +456,53 @@ def inventory_item_history(request, item_id):
         'history_ins': in_from_purchases
     }
     return render(request, 'restaurant/inventory_history.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def inventory_manual_out(request, item_id):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST request required.'}, status=405)
+
+    inventory_item = get_object_or_404(InventoryItem, pk=item_id)
+    quantity_raw = request.POST.get('quantity', '').strip()
+    reason = request.POST.get('reason', '').strip()
+    reference = request.POST.get('reference', '').strip()
+
+    try:
+        quantity = float(quantity_raw)
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': 'Quantity must be a valid number.'}, status=400)
+
+    if quantity <= 0:
+        return JsonResponse({'ok': False, 'error': 'Quantity must be greater than zero.'}, status=400)
+
+    with transaction.atomic():
+        locked_item = InventoryItem.objects.select_for_update().get(pk=inventory_item.pk)
+        previous_quantity = float(locked_item.quantity or 0)
+        locked_item.quantity = previous_quantity - quantity
+        locked_item.save(update_fields=['quantity'])
+
+        stockout = Stockout.objects.create(
+            inventory_item=locked_item,
+            quantity=quantity,
+            reason=reason,
+            reference=reference,
+            created_by=request.user,
+        )
+
+    return JsonResponse({
+        'ok': True,
+        'message': f'Stock reduced by {quantity} {locked_item.unit}.',
+        'remaining_quantity': locked_item.quantity,
+        'unit': locked_item.unit,
+        'entry': {
+            'date': stockout.date.strftime('%Y-%m-%d %H:%M'),
+            'quantity': stockout.quantity,
+            'source': 'Manual out',
+            'reference': stockout.reference or stockout.reason or '-',
+        },
+    })
 
 
 @login_required

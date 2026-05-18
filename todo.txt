@@ -1,8 +1,8 @@
 payer should be with or without ticket..
 multiple products in composants..
-deduct stock when pai
-caisse historique for a day
+deduct stock when pai..
+caisse historique for a day..
 mise a jour supplier situation
 supprimer un plat/category
 modifier donne fournisseurs
-stock out in product
+stock out in product..

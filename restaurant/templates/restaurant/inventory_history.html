@@ -57,6 +57,27 @@
             <div class="panel-heading">
                 <h2>Stock OUT</h2>
             </div>
+            <p class="purchase-selected">
+                <strong>Current stock:</strong>
+                <span id="current-stock">{{ inventory_item.quantity|default:0|floatformat:3 }} {{ inventory_item.unit }}</span>
+            </p>
+            <form id="manual-out-form" class="stack-form" method="post" action="{% url 'restaurant:inventory_manual_out' inventory_item.id %}">
+                {% csrf_token %}
+                <p>
+                    <label for="manual-out-quantity">Manual out quantity</label>
+                    <input id="manual-out-quantity" name="quantity" type="number" min="0.001" step="0.001" required>
+                </p>
+                <p>
+                    <label for="manual-out-reason">Reason</label>
+                    <input id="manual-out-reason" name="reason" type="text" maxlength="220" placeholder="Damaged / waste / adjustment">
+                </p>
+                <p>
+                    <label for="manual-out-reference">Reference</label>
+                    <input id="manual-out-reference" name="reference" type="text" maxlength="120" placeholder="Ticket / note / operator ref">
+                </p>
+                <button type="submit">Reduce stock</button>
+                <p id="manual-out-feedback" class="purchase-selected" style="display:none;"></p>
+            </form>
             <table>
                 <thead>
                     <tr>
@@ -66,41 +87,78 @@
                         <th>Reference</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="stock-out-table-body">
                     {% for entry in outs %}
-                <tr>
-                <td>
-                    {% if entry.barcode %}
-                    {{ entry.date|date:"Y-m-d H:i" }}
-                    {% else %}
-                    {{ entry.order.date|date:"Y-m-d H:i" }}
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="status status-low">
-                    -
-                    {% if entry.barcode %}
-                        {{ entry.weight }}
-                    {% else %}
-                        {{ entry.quantity }}
-                    {% endif %}
-                    </span>
-                </td>
-                <td>
-                    {% if entry.barcode %}Scale barcode scan{% else %}Dish order 
-                recipe{% endif %}
-                </td>
-                <td>
-                    {% if entry.barcode %}
-                    {{ entry.barcode }}
-                    {% else %}
-                    Order #{{ entry.order.id }} - {{ entry.menu_item.name }}
-                    {% endif %}
-                </td>
-                </tr>
-                {% endfor %}
+                        <tr>
+                            <td>{{ entry.date|date:"Y-m-d H:i" }}</td>
+                            <td><span class="status status-low">-{{ entry.quantity }}</span></td>
+                            <td>{{ entry.source }}</td>
+                            <td>{{ entry.reference }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr id="stock-out-empty-row">
+                            <td colspan="4">No stock out history yet.</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </article>
     </section>
+{% endblock %}
+
+{% block js %}
+    <script>
+        const manualOutForm = document.getElementById('manual-out-form');
+        const feedback = document.getElementById('manual-out-feedback');
+        const currentStock = document.getElementById('current-stock');
+        const tableBody = document.getElementById('stock-out-table-body');
+
+        if (manualOutForm) {
+            manualOutForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                feedback.style.display = 'none';
+
+                const csrfToken = manualOutForm.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const formData = new FormData(manualOutForm);
+
+                try {
+                    const response = await fetch(manualOutForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: formData
+                    });
+                    const payload = await response.json();
+
+                    if (!response.ok || !payload.ok) {
+                        throw new Error(payload.error || 'Failed to reduce stock.');
+                    }
+
+                    const emptyRow = document.getElementById('stock-out-empty-row');
+                    if (emptyRow) {
+                        emptyRow.remove();
+                    }
+
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${payload.entry.date}</td>
+                        <td><span class="status status-low">-${Number(payload.entry.quantity).toFixed(3)}</span></td>
+                        <td>${payload.entry.source}</td>
+                        <td>${payload.entry.reference}</td>
+                    `;
+                    tableBody.prepend(newRow);
+
+                    currentStock.textContent = `${Number(payload.remaining_quantity).toFixed(3)} ${payload.unit}`;
+                    manualOutForm.reset();
+                    feedback.textContent = payload.message;
+                    feedback.style.display = 'block';
+                } catch (error) {
+                    feedback.textContent = error.message;
+                    feedback.style.display = 'block';
+                }
+            });
+        }
+    </script>
 {% endblock %}

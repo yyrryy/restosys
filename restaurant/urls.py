@@ -19,6 +19,7 @@ urlpatterns = [
     path('inventory/', views.inventory_dashboard, name='inventory_dashboard'),
     path('inventory/search-items/', views.inventory_item_search, name='inventory_item_search'),
     path('inventory/<int:item_id>/history/', views.inventory_item_history, name='inventory_item_history'),
+    path('inventory/<int:item_id>/manual-out/', views.inventory_manual_out, name='inventory_manual_out'),
     path('pos/', views.pos2_dashboard, name='pos_dashboard'),
     path('pos2/', views.pos2_dashboard, name='pos2_dashboard'),
     path('pos2/items/', views.pos2_category_items, name='pos2_category_items'),
