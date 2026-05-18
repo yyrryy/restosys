@@ -277,6 +277,7 @@ class CashDeskEntry(models.Model):
     entry_type = models.CharField(max_length=3, choices=TYPE_CHOICES)
     amount = models.FloatField(default=0, null=True, blank=True)
     reason = models.CharField(max_length=220, blank=True)
+    supplier = models.ForeignKey('Supplier', related_name='cash_desk_payments', on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='cash_desk_entries', on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
 

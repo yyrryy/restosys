@@ -1,0 +1,82 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}{{ supplier.name }} | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Supplier details</p>
+            <h1>{{ supplier.name }}</h1>
+        </div>
+        <a class="button-link" href="{% url 'restaurant:suppliers_dashboard' %}">Retour</a>
+    </header>
+
+    <section class="stats-grid">
+        {% for stat in stats %}
+            <article class="metric-card">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+            </article>
+        {% endfor %}
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading"><h2>Achats</h2></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Bon</th>
+                    <th>Détails</th>
+                    <th>Total</th>
+                    <th>Par</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for purchase in purchases %}
+                    <tr>
+                        <td>{{ purchase.date|date:"Y-m-d H:i" }}</td>
+                        <td>{{ purchase.purchase_number|default:"-" }}</td>
+                        <td>
+                            {% for item in purchase.items.all %}
+                                {{ item.inventory_item.name }} ({{ item.quantity }} {{ item.inventory_item.unit }} @ {{ item.unit_cost }}){% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        </td>
+                        <td>{{ purchase.total_cost }}</td>
+                        <td>{% if purchase.created_by %}{{ purchase.created_by.username }}{% else %}-{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">Aucun achat pour ce fournisseur.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel spacing-top">
+        <div class="panel-heading"><h2>Paiements</h2></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Montant</th>
+                    <th>Motif</th>
+                    <th>Par</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.date|date:"Y-m-d H:i" }}</td>
+                        <td>{{ payment.amount|floatformat:"2" }}</td>
+                        <td>{{ payment.reason|default:"-" }}</td>
+                        <td>{% if payment.created_by %}{{ payment.created_by.username }}{% else %}-{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="4">Aucun paiement pour ce fournisseur.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

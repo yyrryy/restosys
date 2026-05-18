@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -1059,6 +1059,7 @@ def cash_desk_supplier_payment(request):
         entry_type=CashDeskEntry.TYPE_OUT,
         amount=amount,
         reason=reason,
+        supplier=supplier,
         created_by=request.user,
     )
     return JsonResponse({
@@ -1072,6 +1073,39 @@ def cash_desk_supplier_payment(request):
             'created_by': entry.created_by.username if entry.created_by else '-',
         },
     })
+
+
+@login_required
+@role_required(UserProfile.ROLE_OWNER, UserProfile.ROLE_ADMIN)
+def supplier_history(request, supplier_id):
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
+    purchases = (
+        Purchase.objects.filter(supplier=supplier)
+        .select_related('created_by')
+        .prefetch_related('items__inventory_item')
+    )
+    payments = CashDeskEntry.objects.filter(
+        entry_type=CashDeskEntry.TYPE_OUT,
+    ).filter(
+        Q(supplier=supplier) |
+        (Q(supplier__isnull=True) & Q(reason__startswith=f'Paiement fournisseur: {supplier.name}'))
+    ).select_related('created_by')
+
+    total_purchases = sum(purchase.total_cost for purchase in purchases)
+    total_payments = payments.aggregate(total=Sum('amount'))['total'] or 0
+
+    context = dashboard_context('suppliers', request.user)
+    context.update({
+        'supplier': supplier,
+        'purchases': purchases,
+        'payments': payments,
+        'stats': [
+            {'label': 'Total achats', 'value': total_purchases},
+            {'label': 'Total paiements', 'value': total_payments},
+            {'label': 'Solde fournisseur', 'value': total_purchases - total_payments},
+        ],
+    })
+    return render(request, 'restaurant/supplier_history.html', context)
 
 
 def parse_scale_barcode(barcode):

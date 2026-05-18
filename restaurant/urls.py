@@ -9,6 +9,7 @@ urlpatterns = [
     path('owner/', views.owner_dashboard, name='owner_dashboard'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('suppliers/', views.suppliers_dashboard, name='suppliers_dashboard'),
+    path('suppliers/<int:supplier_id>/history/', views.supplier_history, name='supplier_history'),
     path('purchases/', views.purchase_dashboard, name='purchase_dashboard'),
     path('purchases/search-items/', views.purchase_item_search, name='purchase_item_search'),
     path('menu/<int:item_id>/history/', views.menu_item_history, name='menu_item_history'),

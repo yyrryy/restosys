@@ -68,7 +68,7 @@
         <article class="panel">
             <div class="panel-heading"><h2>Suppliers</h2></div>
             <table>
-                <thead><tr><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th></tr></thead>
+                <thead><tr><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th><th>Action</th></tr></thead>
                 <tbody>
                     {% for supplier in suppliers %}
                         <tr>
@@ -76,9 +76,12 @@
                             <td>{{ supplier.contact_person|default:"-" }}</td>
                             <td>{{ supplier.phone|default:"-" }}</td>
                             <td>{{ supplier.email|default:"-" }}</td>
+                            <td class="action-cell">
+                                <a class="ghost-button" href="{% url 'restaurant:supplier_history' supplier.id %}">Voir</a>
+                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="4">No suppliers yet.</td></tr>
+                        <tr><td colspan="5">No suppliers yet.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
