@@ -1,5 +1,5 @@
 @echo off
-git config --global user.name "moadcasa"
+git config --global user.name "khalidgrillade"
 git config --global user.email "you@example.com"
 REM Pull the latest code from GitHub
 git pull origin main

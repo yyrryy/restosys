@@ -59,6 +59,7 @@ class MenuCategory(models.Model):
 
 
 class MenuItem(models.Model):
+    code = models.TextField(default=None)
     name = models.CharField(max_length=120)
     category = models.CharField(max_length=60)
     price = models.FloatField(default=0, null=True, blank=True)
