@@ -68,7 +68,7 @@ class MenuItem(models.Model):
     is_available = models.BooleanField(default=True)
     plu = models.IntegerField(unique=True, null=True, blank=True, db_index=True, default=None)
     class Meta:
-        ordering = ['category', 'name']
+        ordering = ['categoryname', 'name']
 
     def __str__(self):
         return self.name
