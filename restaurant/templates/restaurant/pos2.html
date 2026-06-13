@@ -36,13 +36,13 @@
                     {% endif %}
                 </div>
 
-                <div class="pos-catalog">
-                    <div class="category-strip" aria-label="Menu categories">
-                        <!-- <button class="category-chip" type="button" data-category="all">All</button> -->
-                        {% for value, label in menu_categories %}
-                            <button class="category-chip" type="button" data-category="{{ value }}">{{ label }}</button>
-                        {% endfor %}
-                    </div>
+                <div class="category-strip" aria-label="Menu categories">
+                    <!-- <button class="category-chip" type="button" data-category="all">All</button> -->
+                    {% for id, name in menu_categories %}
+                        <button class="category-chip" type="button" data-category="{{ id }}">{{ name }}</button>
+                    {% endfor %}
+                </div>
+                <div class="">
 
                     <div
                         class="pos-grid"

@@ -501,9 +501,8 @@ button {
 
 .category-strip {
     display: flex;
-    height: 75vh;
-    overflow-y: scroll;
-    flex-direction: column;
+    overflow-x: scroll;
+    flex-direction: row;
     gap: 8px;
     align-items: stretch;
     margin-bottom: 12px;
@@ -542,7 +541,7 @@ button {
 }
 
 .pos-grid {
-    height: 75vh;
+    /* height: 75vh; */
     overflow-y: scroll;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

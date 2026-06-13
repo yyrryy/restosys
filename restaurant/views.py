@@ -543,9 +543,7 @@ def pos_dashboard(request):
             return redirect('restaurant:pos_dashboard')
 
     context = dashboard_context('pos', request.user)
-    menu_categories = list(MenuCategory.objects.values_list('name', 'name'))
-    if not menu_categories:
-        menu_categories = list(menu_items.values_list('category', 'category').distinct())
+    menu_categories = list(MenuCategory.objects.values_list('id', 'name'))
     context.update({
         'form': form,
         'is_cashier_mode': is_cashier_mode,
@@ -593,9 +591,7 @@ def pos2_dashboard(request):
             return redirect('restaurant:pos2_dashboard')
 
     context = dashboard_context('pos', request.user)
-    menu_categories = list(MenuCategory.objects.values_list('name', 'name'))
-    if not menu_categories:
-        menu_categories = list(menu_items.values_list('category', 'category').distinct())
+    menu_categories = list(MenuCategory.objects.values_list('id', 'name'))
     menu_items_payload = [
         {
             'id': item.pk,
@@ -618,15 +614,15 @@ def pos2_dashboard(request):
 @role_required(UserProfile.ROLE_WAITER, UserProfile.ROLE_CASHIER)
 def pos2_category_items(request):
     category = request.GET.get('category', '').strip()
-    menu_items = MenuItem.objects.filter(is_available=True)
+    print('>>', category)
     if category and category != 'all':
-        menu_items = menu_items.filter(category=category)
+        menu_items = MenuItem.objects.filter(is_available=True, category_id=category)
 
     items = [
         {
             'id': item.pk,
             'name': item.name,
-            'category': item.category,
+            'category': item.category.name,
             'price': float(item.price or 0),
             'plu': item.plu,
             'display_image': item.display_image,
