@@ -19,7 +19,7 @@ class DiningTableAdmin(admin.ModelAdmin):
 
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'is_available', 'plu')
+    list_display = ('name', 'categoryname', 'price', 'is_available', 'plu')
     list_filter = ('categoryname', 'is_available')
     search_fields = ('name',)
 
