@@ -77,7 +77,7 @@ class MenuItem(models.Model):
     def display_image(self):
         if self.image:
             return self.image.url
-        return f'/static/restaurant/img/menu/{self.category}.svg'
+        return f'/static/restaurant/img/menu/{self.categoryname}.svg'
 
 
 class Order(models.Model):
