@@ -59,9 +59,10 @@ class MenuCategory(models.Model):
 
 
 class MenuItem(models.Model):
-    code = models.CharField(max_length=5000, default=None)
-    name = models.CharField(max_length=500)
-    category = models.ForeignKey(MenuCategory, on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    code = models.CharField(max_length=500, default=None, null=True, blank=True)
+    name = models.CharField(max_length=5000, default=None, null=True, blank=True)
+    category = models.CharField(max_length=60)
+    categoryid = models.ForeignKey(MenuCategory, on_delete=models.SET_NULL, null=True, blank=True)
     price = models.FloatField(default=0, null=True, blank=True)
     image = models.FileField(upload_to='menu_items/', blank=True)
     is_available = models.BooleanField(default=True)
