@@ -11,7 +11,7 @@ from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-
+from .funcs import getserverip
 from .forms import (
     CashDeskEntryForm,
     DiningTableForm,
@@ -26,7 +26,7 @@ from .forms import (
     RecipeComponentFormSet,
     SupplierForm,
 )
-from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Scalbarcodescan, Stockout, Supplier, UserProfile
+from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Scalbarcodescan, Stockout, Supplier, UserProfile, Config
 from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt
 
 
@@ -223,6 +223,25 @@ def admin_dashboard(request):
             files = request.FILES if form_type == 'menu' else None
             forms[form_type] = form_class(request.POST, files, prefix=form_type)
             if forms[form_type].is_valid():
+                if form_type == 'menu':
+                    serverip = getserverip()
+                    data = forms[form_type].cleaned_data
+                    name = data['name']
+                    price = data['price']
+                    category = data['category']
+                    plu = data['plu']
+                    is_available = data['is_available']
+                    serverip = getserverip()
+                    payload = {
+                        'name': name,
+                        'price': str(price),
+                        'categorycode': MenuCategory.objects.get(pk=category.id).code,
+                        'is_available': is_available,
+                    }
+                    print(payload) 
+                    #if serverip:
+                        # send to server
+                # create the dish in server
                 forms[form_type].save()
                 messages.success(request, 'Saved successfully.')
                 return redirect('restaurant:admin_dashboard')

@@ -61,7 +61,7 @@ class MenuCategory(models.Model):
 class MenuItem(models.Model):
     code = models.CharField(max_length=500, default=None, null=True, blank=True)
     name = models.CharField(max_length=5000, default=None, null=True, blank=True)
-    categoryname = models.CharField(max_length=60)
+    categoryname = models.CharField(max_length=60, default=None, null=True, blank=True)
     category = models.ForeignKey(MenuCategory, on_delete=models.SET_NULL, null=True, blank=True)
     price = models.FloatField(default=0, null=True, blank=True)
     image = models.FileField(upload_to='menu_items/', blank=True)
@@ -300,4 +300,6 @@ class Scalbarcodescan(models.Model):
 
     def __str__(self):
         return f'Barcode {self.barcode} - {self.inventory_item} ({self.weight} {self.inventory_item.unit})'
-    
+
+class Config(models.Model):
+    serverip=models.CharField(max_length=1000, default=None, null=True, blank=True)

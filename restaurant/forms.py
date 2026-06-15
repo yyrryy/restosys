@@ -12,24 +12,34 @@ class DiningTableForm(forms.ModelForm):
         fields = ['name', 'seats', 'status']
 
 
-class MenuItemForm(forms.ModelForm):
-    category = forms.ChoiceField(choices=())
+# class MenuItemForm(forms.ModelForm):
+#     category = forms.ModelChoiceField(
+#         queryset=MenuCategory.objects.all()
+#     )
 
+#     class Meta:
+#         model = MenuItem
+#         fields = ['name', 'category', 'price', 'plu', 'image', 'is_available']
+#         labels = {
+#             'image': 'Image',
+#         }
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         category_choices = [(category.id, category.name) for category in MenuCategory.objects.all()]
+#         self.fields['category'].choices = category_choices
+#         if not category_choices:
+#             self.fields['category'].help_text = 'Create at least one category first.'
+
+class MenuItemForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field_name in ['name', 'category', 'price']:
+            self.fields[field_name].required = True
     class Meta:
         model = MenuItem
         fields = ['name', 'category', 'price', 'plu', 'image', 'is_available']
-        labels = {
-            'image': 'Image',
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        category_choices = [(category.name, category.name) for category in MenuCategory.objects.all()]
-        self.fields['category'].choices = category_choices
-        if not category_choices:
-            self.fields['category'].help_text = 'Create at least one category first.'
-
-
 class InventoryItemForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
