@@ -9,3 +9,4 @@ __pycache__/
 img/*
 media/*
 push.py
+venv/

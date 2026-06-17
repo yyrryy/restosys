@@ -26,7 +26,7 @@ urlpatterns = [
     path('', include('restaurant.urls')),
     path('inventory/<int:item_id>/history/', restaurant_views.inventory_item_history, name='inventory_item_history'),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('admin/', admin.site.urls),
+    path('masta/', admin.site.urls),
 ]
 
 if settings.USE_SQLITE:

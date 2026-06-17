@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Stockout, Supplier, UserProfile
+from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Stockout, Supplier, UserProfile, Config
 
 
 @admin.register(UserProfile)
@@ -88,3 +88,8 @@ class PurchaseItemAdmin(admin.ModelAdmin):
     list_display = ('purchase', 'inventory_item', 'quantity', 'unit_cost')
     list_filter = ('inventory_item',)
     search_fields = ('purchase__supplier__name', 'inventory_item__name')
+
+@admin.register(Config)
+class ConfigAdmin(admin.ModelAdmin):
+    list_display = ('serverip',)
+    search_fields = ('serverip',)
