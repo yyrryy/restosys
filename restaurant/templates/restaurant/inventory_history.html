@@ -58,18 +58,18 @@
                 <h2>Stock OUT</h2>
             </div>
             <p class="purchase-selected">
-                <strong>Current stock:</strong>
+                <strong>Stock actuel:</strong>
                 <span id="current-stock">{{ inventory_item.quantity|default:0|floatformat:3 }} {{ inventory_item.unit }}</span>
             </p>
             <form id="manual-out-form" class="stack-form" method="post" action="{% url 'restaurant:inventory_manual_out' inventory_item.id %}">
                 {% csrf_token %}
                 <p>
-                    <label for="manual-out-quantity">Manual out quantity</label>
+                    <label for="manual-out-quantity">Quantité sortante</label>
                     <input id="manual-out-quantity" name="quantity" type="number" min="0.001" step="0.001" required>
                 </p>
                 <p>
-                    <label for="manual-out-reason">Reason</label>
-                    <input id="manual-out-reason" name="reason" type="text" maxlength="220" placeholder="Damaged / waste / adjustment">
+                    <label for="manual-out-reason">Raison</label>
+                    <input id="manual-out-reason" name="reason" type="text" maxlength="220" placeholder="Endommagé / déchet / ajustement">
                 </p>
                 <p>
                     <label for="manual-out-reference">Reference</label>

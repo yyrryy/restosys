@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import json
 from functools import wraps
 from multiprocessing import context
-
+import requests as req
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -232,13 +232,16 @@ def admin_dashboard(request):
                     plu = data['plu']
                     is_available = data['is_available']
                     serverip = getserverip()
+                    files = request.FILES.get(forms[form_type].add_prefix('image'))
                     payload = {
                         'name': name,
                         'price': str(price),
                         'categorycode': MenuCategory.objects.get(pk=category.id).code,
                         'is_available': is_available,
                     }
-                    print(payload) 
+
+                    print(payload, files) 
+                    # res = req.post(f'http://{serverip}/api/add_dishes/', data=payload, files={'image': files} if files else None)
                     #if serverip:
                         # send to server
                 # create the dish in server
