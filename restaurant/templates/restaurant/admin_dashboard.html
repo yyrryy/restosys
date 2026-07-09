@@ -32,17 +32,35 @@
             <button class="ghost-button form-toggle" type="button" data-target="category-form" aria-controls="category-form" aria-pressed="false">Catégorie</button>
             <button class="ghost-button form-toggle" type="button" data-target="user-form" aria-controls="user-form" aria-pressed="false">Utilisateur & Rôle</button>
         </div>
-
+        
         <div class="stack-form-group">
-            <article class="panel form-panel" id="table-form" {% if active_form_type != 'table' %}hidden{% endif %}>
-                <div class="panel-heading"><h3>Add table</h3></div>
-                <form class="stack-form" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="table">
-                    {{ forms.table.as_p }}
-                    <button type="submit">Save Table</button>
-                </form>
+            <!-- add table -->
+            <article class="panel form-panel d-flex" id="table-form" {% if active_form_type != 'table' %}hidden{% endif %}>
+                <!-- tables -->
+                <article class="panel">
+                    <div class="panel-heading"><h2>Tables</h2></div>
+                    <table>
+                        <thead><tr><th>Name</th><th>Seats</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for table in tables %}
+                                <tr><td>{{ table.name }}</td><td>{{ table.seats }}</td><td>{{ table.get_status_display }}</td></tr>
+                            {% empty %}
+                                <tr><td colspan="3">No tables yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </article>
+                <div>
+                    <div class="panel-heading"><h3>Add table</h3></div>
+                    <form class="stack-form" method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="table">
+                        {{ forms.table.as_p }}
+                        <button type="submit">Save Table</button>
+                    </form>
+                </div>
             </article>
+            <!-- add plat -->
             <article class="panel form-panel" id="menu-form" {% if active_form_type != 'menu' %}hidden{% endif %}>
                 <div class="panel-heading"><h3>Add dish</h3></div>
                 <form class="stack-form" method="post" enctype="multipart/form-data">
@@ -52,6 +70,7 @@
                     <button type="submit">Save Dish</button>
                 </form>
             </article>
+            <!-- add product -->
             <article class="panel form-panel" id="inventory-form" {% if active_form_type != 'inventory' %}hidden{% endif %}>
                 <div class="panel-heading"><h3>Add product</h3></div>
                 <form class="stack-form" method="post">
@@ -61,6 +80,7 @@
                     <button type="submit">Save Product</button>
                 </form>
             </article>
+            <!-- add component -->
             <article class="panel form-panel" id="component-form" {% if active_form_type != 'component' %}hidden{% endif %}>
                 <div class="panel-heading"><h3>Ajouter des composants</h3></div>
                 <form class="stack-form" method="post">
@@ -70,6 +90,7 @@
                     <button type="submit">Enregistrer</button>
                 </form>
             </article>
+            <!-- add category -->
             <article class="panel form-panel" id="category-form" {% if active_form_type != 'category' %}hidden{% endif %}>
                 <div class="panel-heading"><h3>Ajouter une catégorie</h3></div>
                 <form class="stack-form" method="post">
@@ -79,6 +100,7 @@
                     <button type="submit">Enregistrer la catégorie</button>
                 </form>
             </article>
+            <!-- add user -->
             <article class="panel form-panel" id="user-form" {% if active_form_type != 'user' %}hidden{% endif %}>
                 <div class="panel-heading"><h3>Ajouter un utilisateur et un rôle</h3></div>
                 <form class="stack-form" method="post">
@@ -92,6 +114,7 @@
     </section>
 
     <section class="content-grid">
+        <!-- menu -->
         <article class="panel">
             <div class="panel-heading"><h2>Menu</h2></div>
             <input
@@ -127,19 +150,8 @@
                 </tbody>
             </table>
         </article>
-        <article class="panel">
-            <div class="panel-heading"><h2>Tables</h2></div>
-            <table>
-                <thead><tr><th>Name</th><th>Seats</th><th>Status</th></tr></thead>
-                <tbody>
-                    {% for table in tables %}
-                        <tr><td>{{ table.name }}</td><td>{{ table.seats }}</td><td>{{ table.get_status_display }}</td></tr>
-                    {% empty %}
-                        <tr><td colspan="3">No tables yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </article>
+        
+        <!-- categories -->
         <article class="panel">
             <div class="panel-heading"><h2>Categories</h2></div>
             <table>
@@ -153,6 +165,7 @@
                 </tbody>
             </table>
         </article>
+        <!-- utilisateurs -->
         <article class="panel">
             <div class="panel-heading"><h2>Users & roles</h2></div>
             <table>
