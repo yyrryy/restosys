@@ -35,50 +35,96 @@
         
         <div class="stack-form-group">
             <!-- add table -->
-            <article class="panel form-panel d-flex" id="table-form" {% if active_form_type != 'table' %}hidden{% endif %}>
-                <!-- tables -->
-                <article class="panel">
-                    <div class="panel-heading"><h2>Tables</h2></div>
-                    <table>
-                        <thead><tr><th>Name</th><th>Seats</th><th>Status</th></tr></thead>
-                        <tbody>
-                            {% for table in tables %}
-                                <tr><td>{{ table.name }}</td><td>{{ table.seats }}</td><td>{{ table.get_status_display }}</td></tr>
-                            {% empty %}
-                                <tr><td colspan="3">No tables yet.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </article>
-                <div>
-                    <div class="panel-heading"><h3>Add table</h3></div>
-                    <form class="stack-form" method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="form_type" value="table">
-                        {{ forms.table.as_p }}
-                        <button type="submit">Save Table</button>
-                    </form>
+            <article class="panel form-panel" id="table-form" {% if active_form_type != 'table' %}hidden{% endif %}>
+                <div class="content-grid">
+                    <!-- tables -->
+                    <div class="panel">
+                        <div class="panel-heading"><h2>Tables</h2></div>
+                        <table>
+                            <thead><tr><th>Name</th><th>Seats</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {% for table in tables %}
+                                    <tr><td>{{ table.name }}</td><td>{{ table.seats }}</td><td>{{ table.get_status_display }}</td></tr>
+                                {% empty %}
+                                    <tr><td colspan="3">No tables yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="panel-heading"><h3>Add table</h3></div>
+                        <form class="stack-form" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="table">
+                            {{ forms.table.as_p }}
+                            <button type="submit">Save Table</button>
+                        </form>
+                    </div>
                 </div>
             </article>
             <!-- add plat -->
             <article class="panel form-panel" id="menu-form" {% if active_form_type != 'menu' %}hidden{% endif %}>
-                <div class="panel-heading"><h3>Add dish</h3></div>
-                <form class="stack-form" method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="menu">
-                    {{ forms.menu.as_p }}
-                    <button type="submit">Save Dish</button>
-                </form>
+                <div class="content-grid">
+                    <article class="panel">
+                        <div class="panel-heading"><h2>Menu</h2></div>
+                        <input
+                            id="menu-search-input"
+                            type="search"
+                            placeholder="Rechercher un repas, catégorie ou composant..."
+                            aria-label="Rechercher dans les éléments du menu"
+                        >
+                        <table id="menu-items-table" class="spacing-top">
+                            <thead><tr><th>Repas</th><th>Catégorie</th><th>prix</th><th>Image</th><th>Components</th><th>Available</th><th>Action</th></tr></thead>
+                            <tbody id="menu-items-body">
+                                {% for item in menu_items %}
+                                    <tr>
+                                        <td>{{ item.name }}</td>
+                                        <td>{{ item.category }}</td>
+                                        <td>{{ item.price }}</td>
+                                        <td><img class="menu-thumb" src="{{ item.display_image }}" alt="{{ item.name }}"></td>
+                                        <td>
+                                            {% for component in item.components.all %}
+                                                {{ component.quantity }} {{ component.inventory_item.unit }} {{ component.inventory_item.name }}{% if not forloop.last %}, {% endif %}
+                                            {% empty %}
+                                                No recipe yet
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ item.is_available|yesno:"Yes,No" }}</td>
+                                        <td class="action-cell">
+                                            <a class="ghost-button" href="{% url 'restaurant:menu_item_history' item.id %}">Historique</a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="7">No dishes yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </article>
+                    <div>
+                        <div class="panel-heading"><h3>Add dish</h3></div>
+                        <form class="stack-form" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="menu">
+                            {{ forms.menu.as_p }}
+                            <button type="submit">Save Dish</button>
+                        </form>
+                    </div>
+
+                </div>
             </article>
             <!-- add product -->
             <article class="panel form-panel" id="inventory-form" {% if active_form_type != 'inventory' %}hidden{% endif %}>
-                <div class="panel-heading"><h3>Add product</h3></div>
-                <form class="stack-form" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="inventory">
-                    {{ forms.inventory.as_p }}
-                    <button type="submit">Save Product</button>
-                </form>
+                <div class="content-grid">
+                    <div>
+                        <div class="panel-heading"><h3>Add product</h3></div>
+                        <form class="stack-form" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="inventory">
+                            {{ forms.inventory.as_p }}
+                            <button type="submit">Save Product</button>
+                        </form>
+                    </div>
+                </div>
             </article>
             <!-- add component -->
             <article class="panel form-panel" id="component-form" {% if active_form_type != 'component' %}hidden{% endif %}>
@@ -92,13 +138,44 @@
             </article>
             <!-- add category -->
             <article class="panel form-panel" id="category-form" {% if active_form_type != 'category' %}hidden{% endif %}>
-                <div class="panel-heading"><h3>Ajouter une catégorie</h3></div>
-                <form class="stack-form" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="form_type" value="category">
-                    {{ forms.category.as_p }}
-                    <button type="submit">Enregistrer la catégorie</button>
-                </form>
+                <div class="content-grid">
+                    <div>
+                        <div class="panel-heading"><h3>Ajouter une catégorie</h3></div>
+                        <form class="stack-form" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="category">
+                            {{ forms.category.as_p }}
+                            <button type="submit">Enregistrer la catégorie</button>
+                        </form>
+                    </div>
+                    <!-- categories -->
+                    <article class="panel">
+                        <div class="panel-heading"><h2>Categories</h2></div>
+                        <table>
+                            <thead><tr><th>Name</th></tr></thead>
+                            <tbody>
+                                {% for category in categories %}
+                                    <tr>
+                                        <td>{{ category.name }}</td>
+                                        <!-- activate or deactivate -->
+                                        <td>
+                                            {% if category.isactive %}
+                                                
+                                                    
+                                                    <button onclick="togglecategorystatus(event, '{{category.id}}')">Deactiver</button>
+                                            {% else %}
+                                                
+                                                    
+                                                    <button onclick="togglecategorystatus(event, '{{category.id}}')">Activer</button>
+                                            {% endif %}
+                                    </tr>
+                                {% empty %}
+                                    <tr><td>No categories yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </article>
+                </div>
             </article>
             <!-- add user -->
             <article class="panel form-panel" id="user-form" {% if active_form_type != 'user' %}hidden{% endif %}>
@@ -115,56 +192,9 @@
 
     <section class="content-grid">
         <!-- menu -->
-        <article class="panel">
-            <div class="panel-heading"><h2>Menu</h2></div>
-            <input
-                id="menu-search-input"
-                type="search"
-                placeholder="Rechercher un repas, catégorie ou composant..."
-                aria-label="Rechercher dans les éléments du menu"
-            >
-            <table id="menu-items-table" class="spacing-top">
-                <thead><tr><th>Repas</th><th>Catégorie</th><th>prix</th><th>Image</th><th>Components</th><th>Available</th><th>Action</th></tr></thead>
-                <tbody id="menu-items-body">
-                    {% for item in menu_items %}
-                        <tr>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.category }}</td>
-                            <td>{{ item.price }}</td>
-                            <td><img class="menu-thumb" src="{{ item.display_image }}" alt="{{ item.name }}"></td>
-                            <td>
-                                {% for component in item.components.all %}
-                                    {{ component.quantity }} {{ component.inventory_item.unit }} {{ component.inventory_item.name }}{% if not forloop.last %}, {% endif %}
-                                {% empty %}
-                                    No recipe yet
-                                {% endfor %}
-                            </td>
-                            <td>{{ item.is_available|yesno:"Yes,No" }}</td>
-                            <td class="action-cell">
-                                <a class="ghost-button" href="{% url 'restaurant:menu_item_history' item.id %}">Historique</a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr><td colspan="7">No dishes yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </article>
         
-        <!-- categories -->
-        <article class="panel">
-            <div class="panel-heading"><h2>Categories</h2></div>
-            <table>
-                <thead><tr><th>Name</th></tr></thead>
-                <tbody>
-                    {% for category in categories %}
-                        <tr><td>{{ category.name }}</td></tr>
-                    {% empty %}
-                        <tr><td>No categories yet.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </article>
+        
+        
         <!-- utilisateurs -->
         <article class="panel">
             <div class="panel-heading"><h2>Users & roles</h2></div>
@@ -189,6 +219,19 @@
 
 {% block js %}
 <script>
+    function togglecategorystatus(event, categoryId) {
+        $.get("{% url 'restaurant:toggle_category_status' %}", { category_id: categoryId })
+            .done(function (data) {
+                if (data.success) {
+                    $(event.target).text(data.is_active ? "Deactivate" : "Activate");
+                } else {
+                    alert("Failed to toggle category status.");
+                }
+            })
+            .fail(function () {
+                alert("Error occurred while toggling category status.");
+            });
+    }
     (function () {
         const buttons = document.querySelectorAll('.form-toggle');
         const panels = document.querySelectorAll('.form-panel');

@@ -1470,3 +1470,10 @@ def update_order_status(request, order_id, status):
         if status == Order.STATUS_READY:
             messages.success(request, stock_message)
     return redirect(request.POST.get('next') or 'restaurant:dashboard')
+
+def toggle_category_status(request):
+    category_id = request.POST.get('category_id')
+    category = get_object_or_404(MenuCategory, pk=category_id)
+    category.is_active = not category.is_active
+    category.save(update_fields=['is_active'])
+    return JsonResponse({'ok': True, 'is_active': category.is_active})

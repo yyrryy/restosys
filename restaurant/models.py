@@ -51,6 +51,7 @@ class DiningTable(models.Model):
 class MenuCategory(models.Model):
     name = models.CharField(max_length=60, unique=True)
     code = models.CharField(max_length=20, unique=False, blank=True)
+    isactive = models.BooleanField(default=True)
     class Meta:
         ordering = ['name']
 
