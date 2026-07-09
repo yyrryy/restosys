@@ -100,10 +100,10 @@ def create_order_from_form(form, menu_items, waiter, print_ticket=True):
 def create_paid_pos_order(form, menu_items, print_ticket=True):
     selected_waiter = form.cleaned_data.get('cashier_waiter')
     order = create_order_from_form(form, menu_items, selected_waiter, print_ticket=False)
-    success, stock_message = deduct_order_stock(order)
-    if not success:
-        order.delete()
-        return None, stock_message
+    # success, stock_message = deduct_order_stock(order)
+    # if not success:
+    #     order.delete()
+    #     return None, stock_message
 
     order.status = Order.STATUS_PAID
     if not print_ticket:
@@ -515,7 +515,7 @@ def inventory_manual_out(request, item_id):
 
     return JsonResponse({
         'ok': True,
-        'message': f'Stock reduced by {quantity} {locked_item.unit}.',
+        'message': f'reduction de stock par {quantity} {locked_item.unit}.',
         'remaining_quantity': locked_item.quantity,
         'unit': locked_item.unit,
         'entry': {
@@ -967,7 +967,7 @@ def pay_table_orders(request, table_id):
     order_refs = ', '.join(f'#{order.id}' for order in orders)
     with transaction.atomic():
         for order in orders:
-            success, stock_message = deduct_order_stock(order)
+            # success, stock_message = deduct_order_stock(order)
             order.status = Order.STATUS_PAID
             if not print_ticket:
                 order._skip_payment_receipt = True
@@ -1436,7 +1436,7 @@ def update_order_status(request, order_id, status):
             
         was_paid = order.status == Order.STATUS_PAID
         if status == Order.STATUS_PAID:
-            success, stock_message = deduct_order_stock(order)
+            # success, stock_message = deduct_order_stock(order)
             discount_raw = request.POST.get('discount_amount', '').strip()
             discount_amount, discount_error = parse_discount_input(discount_raw)
             if discount_error:
