@@ -613,21 +613,21 @@ def pos2_dashboard(request):
             return redirect('restaurant:pos2_dashboard')
 
     context = dashboard_context('pos', request.user)
-    menu_categories = list(MenuCategory.objects.values_list('id', 'name'))
-    menu_items_payload = [
-        {
-            'id': item.pk,
-            'name': item.name,
-            'price': float(item.price or 0),
-            'plu': item.plu,
-        }
-        for item in menu_items
-    ]
+    menu_categories = list(MenuCategory.objects.filter(isactive=True).values_list('id', 'name'))
+    # menu_items_payload = [
+    #     {
+    #         'id': item.pk,
+    #         'name': item.name,
+    #         'price': float(item.price or 0),
+    #         'plu': item.plu,
+    #     }
+    #     for item in menu_items
+    # ]
     context.update({
         'form': form,
         'is_cashier_mode': is_cashier_mode,
-        'menu_categories': menu_categories,
-        'menu_items_payload': menu_items_payload,
+        'menu_categories': menu_categories
+        # 'menu_items_payload': menu_items_payload,
     })
     return render(request, 'restaurant/pos2.html', context)
 
@@ -1472,8 +1472,12 @@ def update_order_status(request, order_id, status):
     return redirect(request.POST.get('next') or 'restaurant:dashboard')
 
 def toggle_category_status(request):
-    category_id = request.POST.get('category_id')
-    category = get_object_or_404(MenuCategory, pk=category_id)
-    category.is_active = not category.is_active
-    category.save(update_fields=['is_active'])
-    return JsonResponse({'ok': True, 'is_active': category.is_active})
+    category_id = request.GET.get('category_id')
+    if not category_id:
+        return JsonResponse({'success': False}, status=400)
+    category = MenuCategory.objects.filter(id=category_id).first()
+    if not category:
+        return JsonResponse({'success': False}, status=404)
+    category.isactive = not category.isactive
+    category.save(update_fields=['isactive'])
+    return JsonResponse({'success': True, 'isactive': category.isactive})

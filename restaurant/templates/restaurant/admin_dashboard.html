@@ -223,7 +223,7 @@
         $.get("{% url 'restaurant:toggle_category_status' %}", { category_id: categoryId })
             .done(function (data) {
                 if (data.success) {
-                    $(event.target).text(data.is_active ? "Deactivate" : "Activate");
+                    $(event.target).text(data.is_active ? "Deactiver" : "Activer");
                 } else {
                     alert("Failed to toggle category status.");
                 }
