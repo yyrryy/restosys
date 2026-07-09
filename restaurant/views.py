@@ -178,14 +178,14 @@ def deduct_order_stock(order):
 @role_required(UserProfile.ROLE_OWNER)
 def owner_dashboard(request):
     orders = Order.objects.prefetch_related('items')
-    paid_total = sum(order.payable_total for order in orders.filter(status=Order.STATUS_PAID))
+    paid_total = round(sum(order.payable_total for order in orders.filter(status=Order.STATUS_PAID)), 2)
     context = dashboard_context('owner', request.user)
     context.update({
         'stats': [
             {'label': 'Total orders', 'value': orders.count()},
             {'label': 'Active orders', 'value': orders.exclude(status__in=[Order.STATUS_PAID, Order.STATUS_SERVED]).count()},
             {'label': 'Tables', 'value': DiningTable.objects.count()},
-            {'label': 'Revenue paid', 'value': paid_total},
+            #{'label': 'Revenue paid', 'value': paid_total},
         ],
         'orders_by_status': Order.objects.values('status').annotate(total=Count('id')).order_by('status'),
         'low_inventory': [item for item in InventoryItem.objects.all() if item.needs_reorder],
