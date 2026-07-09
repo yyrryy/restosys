@@ -810,7 +810,7 @@ def cashier_dashboard(request):
 @role_required(UserProfile.ROLE_CASHIER)
 def cashier_orders_live(request):
     ready_orders = (
-        Order.objects.filter(status=Order.STATUS_PREPARING)
+        Order.objects.filter(Q(status=Order.STATUS_READY)|Q(status=Order.STATUS_SERVED))
         .prefetch_related('items__menu_item', 'table')
         .order_by('date')
     )
