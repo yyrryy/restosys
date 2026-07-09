@@ -25,16 +25,16 @@
             <a class="{% if active == 'owner' %}active{% endif %}" href="{% url 'restaurant:owner_dashboard' %}">Owner</a>
             <a class="{% if active == 'admin' %}active{% endif %}" href="{% url 'restaurant:admin_dashboard' %}">Admin</a>
             {% if role == 'Owner' or role == 'Admin' %}
-                <a class="{% if active == 'suppliers' %}active{% endif %}" href="{% url 'restaurant:suppliers_dashboard' %}">Suppliers</a>
-                <a class="{% if active == 'purchases' %}active{% endif %}" href="{% url 'restaurant:purchase_dashboard' %}">Purchases</a>
+                <a class="{% if active == 'suppliers' %}active{% endif %}" href="{% url 'restaurant:suppliers_dashboard' %}">Fournisseur</a>
+                <a class="{% if active == 'purchases' %}active{% endif %}" href="{% url 'restaurant:purchase_dashboard' %}">Achats</a>
             {% endif %}
-            <a class="{% if active == 'inventory' %}active{% endif %}" href="{% url 'restaurant:inventory_dashboard' %}">Inventory</a>
+            <a class="{% if active == 'inventory' %}active{% endif %}" href="{% url 'restaurant:inventory_dashboard' %}">Stock</a>
             {% if role == 'Owner' or role == 'Waiter' or role == 'Cashier' or active == 'pos' %}
                 <a class="{% if active == 'pos' %}active{% endif %}" href="{% url 'restaurant:pos_dashboard' %}">POS</a>
             {% endif %}
-            <a class="{% if active == 'waiter' %}active{% endif %}" href="{% url 'restaurant:waiter_dashboard' %}">Waiter</a>
-            <a class="{% if active == 'kitchen' %}active{% endif %}" href="{% url 'restaurant:kitchen_dashboard' %}">Kitchen</a>
-            <a class="{% if active == 'cashier' %}active{% endif %}" href="{% url 'restaurant:cashier_dashboard' %}">Cashier</a>
+            <a class="{% if active == 'waiter' %}active{% endif %}" href="{% url 'restaurant:waiter_dashboard' %}">Serveur</a>
+            <a class="{% if active == 'kitchen' %}active{% endif %}" href="{% url 'restaurant:kitchen_dashboard' %}">Cuisine</a>
+            <a class="{% if active == 'cashier' %}active{% endif %}" href="{% url 'restaurant:cashier_dashboard' %}">Caissier</a>
             {% if user.is_authenticated %}
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}

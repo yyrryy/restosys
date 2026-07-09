@@ -214,7 +214,7 @@
                 $tile.attr('data-plu', item.plu);
                 itemIdByPlu[String(item.plu)] = item.id;
             }
-            $tile.append($('<img>', { src: item.display_image, alt: item.name }));
+            $tile.append($('<img>', { src: item.display_image, alt: item.name, loading: 'lazy' }));
             $tile.append($('<strong>').text(item.name));
             $tile.append($('<span>').text(item.category));
             $tile.append($('<small>').text(money(item.price)));
