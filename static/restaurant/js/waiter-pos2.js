@@ -4,12 +4,11 @@
     const $cartTotal = $('#cart-total');
     const $clearCartButton = $('#clear-cart');
     const itemMetaById = {};
-    const itemIdByPlu = {};
     const barcodeStatsByItemId = {};
-    const resolvedItemIdByPlu = {};
     const itemLastTouchedById = {};
     let touchSequence = 0;
-    const resolvePluUrl = window.posResolvePluUrl || '';
+    const scanUrl = window.posScanUrl || '';
+    const csrfToken = $('#pos-order-form input[name="csrfmiddlewaretoken"]').val() || '';
 
     if (!$grid.length) {
         return;
@@ -27,27 +26,6 @@
         return document.getElementById(`id_item_${itemId}`);
     }
 
-    function parseScaleBarcode(rawValue) {
-        console.log('Raw barcode value:', rawValue);
-        const digits = String(rawValue || '').replace(/\D/g, '');
-        if (digits.length >= 12) {
-            return {
-                plu: Number(digits.slice(2, 7)),
-                barcodePrice: Number(digits.slice(7, 12)) / 100,
-            };
-        }
-        if (digits.length >= 1) {
-            return {
-                plu: Number(digits),
-                barcodePrice: null,
-            };
-        }
-        return {
-            plu: 0,
-            barcodePrice: null,
-        };
-    }
-
     function roundWeight(value) {
         return Math.round(Number(value || 0) * 1000) / 1000;
     }
@@ -55,39 +33,6 @@
     function markItemTouched(itemId) {
         touchSequence += 1;
         itemLastTouchedById[itemId] = touchSequence;
-    }
-
-    async function resolveItemIdByPlu(plu) {
-        if (!plu) {
-            return 0;
-        }
-        if (itemIdByPlu[String(plu)]) {
-            return itemIdByPlu[String(plu)];
-        }
-        if (resolvedItemIdByPlu[String(plu)]) {
-            return resolvedItemIdByPlu[String(plu)];
-        }
-        if (!resolvePluUrl) {
-            return 0;
-        }
-        try {
-            const response = await fetch(`${resolvePluUrl}?plu=${encodeURIComponent(plu)}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            });
-            if (!response.ok) {
-                return 0;
-            }
-            const data = await response.json();
-            const itemId = Number(data.item_id || 0);
-            if (!itemId) {
-                return 0;
-            }
-            resolvedItemIdByPlu[String(plu)] = itemId;
-            itemIdByPlu[String(plu)] = itemId;
-            return itemId;
-        } catch (error) {
-            return 0;
-        }
     }
 
     function addItemById(itemId) {
@@ -189,6 +134,43 @@
         $cartTotal.text(money(total));
     }
 
+    function applyScanResult(scanResult) {
+        const item = scanResult.item || {};
+        const itemId = Number(item.id || 0);
+        if (!itemId) {
+            return;
+        }
+
+        itemMetaById[itemId] = {
+            name: item.name || `Item #${itemId}`,
+            price: Number(item.price || 0),
+        };
+
+        const field = fieldForItem(itemId);
+        if (!field) {
+            return;
+        }
+
+        const quantityDelta = Number(scanResult.quantity_delta || 0);
+        if (!quantityDelta) {
+            return;
+        }
+
+        field.value = roundWeight(Number(field.value || 0) + quantityDelta);
+
+        if (scanResult.scan_type === 'barcode_weight' && Number(scanResult.barcode_price || 0) > 0) {
+            const current = barcodeStatsByItemId[itemId] || { totalWeight: 0, totalPrice: 0 };
+            current.totalWeight = roundWeight(current.totalWeight + quantityDelta);
+            current.totalPrice = Number((current.totalPrice + Number(scanResult.barcode_price)).toFixed(2));
+            barcodeStatsByItemId[itemId] = current;
+        } else {
+            delete barcodeStatsByItemId[itemId];
+        }
+
+        markItemTouched(itemId);
+        updateCart();
+    }
+
     function renderItems(items) {
         if (!items.length) {
             $grid.html('<p class="empty-state">No available dishes in this category.</p>');
@@ -213,7 +195,6 @@
             $tile.attr('data-price', item.price);
             if (item.plu !== null && item.plu !== undefined && item.plu !== '') {
                 $tile.attr('data-plu', item.plu);
-                itemIdByPlu[String(item.plu)] = item.id;
             }
             $tile.append($('<img>', { src: item.display_image, alt: item.name, loading: 'lazy' }));
             $tile.append($('<strong>').text(item.name));
@@ -284,25 +265,7 @@
         updateCart();
     });
 
-    (function registerPluScanListener() {
-        const payloadScript = document.getElementById('pos2-items-payload');
-        if (payloadScript) {
-            try {
-                const allItems = JSON.parse(payloadScript.textContent || '[]');
-                allItems.forEach(function (item) {
-                    itemMetaById[item.id] = {
-                        name: item.name,
-                        price: Number(item.price || 0),
-                    };
-                    if (item.plu !== null && item.plu !== undefined && item.plu !== '') {
-                        itemIdByPlu[String(item.plu)] = item.id;
-                    }
-                });
-            } catch (error) {
-                // ignore malformed payload
-            }
-        }
-
+    (function registerBarcodeScanListener() {
         let scanBuffer = '';
         let lastKeyTime = 0;
         let submitTimer = null;
@@ -312,46 +275,35 @@
             if (scanInProgress) {
                 return;
             }
+            const barcode = scanBuffer.trim();
+            scanBuffer = '';
+            if (!barcode) {
+                return;
+            }
+            if (!scanUrl) {
+                return;
+            }
             scanInProgress = true;
             try {
-                const parsed = parseScaleBarcode(scanBuffer);
-                console.log('Parsed barcode:', parsed);
-                scanBuffer = '';
-                if (!parsed.plu) {
+                setReadyState('Processing scan...');
+                const response = await fetch(scanUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: `barcode=${encodeURIComponent(barcode)}`,
+                });
+                const data = await response.json().catch(function () {
+                    return null;
+                });
+                if (!response.ok || !data || !data.ok) {
+                    setReadyState((data && data.error) || 'Scan failed');
                     return;
                 }
-                let itemId = itemIdByPlu[String(parsed.plu)];
-                if (!itemId) {
-                    itemId = await resolveItemIdByPlu(parsed.plu);
-                }
-                if (!itemId) {
-                    return;
-                }
-                const item = itemMetaById[itemId];
-                if (!item) {
-                    return;
-                }
-                const unitPrice = Number(item.price || 0);
-                if (!unitPrice || !parsed.barcodePrice) {
-                    delete barcodeStatsByItemId[itemId];
-                    addItemById(itemId);
-                    return;
-                }
-                const weight = roundWeight(parsed.barcodePrice / unitPrice);
-                if (weight <= 0) {
-                    return;
-                }
-                const field = fieldForItem(itemId);
-                if (!field) {
-                    return;
-                }
-                field.value = roundWeight(Number(field.value || 0) + weight);
-                const current = barcodeStatsByItemId[itemId] || { totalWeight: 0, totalPrice: 0 };
-                current.totalWeight = roundWeight(current.totalWeight + weight);
-                current.totalPrice = Number((current.totalPrice + parsed.barcodePrice).toFixed(2));
-                barcodeStatsByItemId[itemId] = current;
-                markItemTouched(itemId);
-                updateCart();
+                applyScanResult(data);
+                setReadyState(data.message || 'Scan complete');
             } finally {
                 scanInProgress = false;
             }

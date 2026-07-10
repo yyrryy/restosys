@@ -25,6 +25,7 @@ urlpatterns = [
     path('pos2/', views.pos2_dashboard, name='pos2_dashboard'),
     path('pos2/items/', views.pos2_category_items, name='pos2_category_items'),
     path('pos/resolve-plu/', views.pos_resolve_plu, name='pos_resolve_plu'),
+    path('pos2/scan-barcode/', views.pos2_scan_barcode, name='pos2_scan_barcode'),
     path('waiter/', views.waiter_dashboard, name='waiter_dashboard'),
     path('waiter/orders/live/', views.waiter_orders_live, name='waiter_orders_live'),
     path('kitchen/', views.kitchen_dashboard, name='kitchen_dashboard'),

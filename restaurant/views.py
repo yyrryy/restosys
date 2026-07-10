@@ -710,6 +710,52 @@ def pos_resolve_plu(request):
 
 
 @login_required
+@role_required(UserProfile.ROLE_WAITER, UserProfile.ROLE_CASHIER)
+def pos2_scan_barcode(request):
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST request required.'}, status=405)
+
+    barcode_input = (request.POST.get('barcode') or '').strip()
+    parsed_barcode, error = parse_scale_barcode(barcode_input)
+    if error:
+        return JsonResponse({'ok': False, 'error': error}, status=400)
+
+    menu_item = resolve_pos_menu_item_by_plu(parsed_barcode['plu'])
+    if not menu_item:
+        return JsonResponse({'ok': False, 'error': f'No menu item found for PLU {parsed_barcode["plu"]}.'}, status=404)
+
+    unit_price = float(menu_item.price or 0)
+    barcode_price = float(parsed_barcode['price']) if parsed_barcode['price'] else None
+    quantity_delta = 1.0
+    scan_type = 'plu'
+
+    if barcode_price is not None and unit_price > 0:
+        quantity_delta = round(barcode_price / unit_price, 3)
+        if quantity_delta <= 0:
+            return JsonResponse({'ok': False, 'error': f'Computed quantity is invalid for {menu_item.name}.'}, status=400)
+        scan_type = 'barcode_weight'
+
+    return JsonResponse({
+        'ok': True,
+        'scan_type': scan_type,
+        'barcode': parsed_barcode['raw'],
+        'plu': parsed_barcode['plu'],
+        'barcode_price': barcode_price,
+        'quantity_delta': quantity_delta,
+        'item': {
+            'id': menu_item.id,
+            'name': menu_item.name,
+            'price': unit_price,
+        },
+        'message': (
+            f'Scanned {menu_item.name}'
+            if scan_type == 'plu'
+            else f'Scanned {menu_item.name}: {quantity_delta} from barcode'
+        ),
+    })
+
+
+@login_required
 @role_required(UserProfile.ROLE_WAITER)
 def waiter_dashboard(request):
     context = dashboard_context('waiter', request.user)
@@ -1193,6 +1239,11 @@ def process_scale_scan(user, barcode_input):
         'prefix': parsed_barcode['prefix'],
         'plu': parsed_barcode['plu'],
         'price': float(parsed_barcode['price']),
+        'product': {
+            'name': product.name,
+            'price_per_kg': float(product.price_per_kg),
+            'unit': product.unit,
+        },
         'product_name': product.name,
         'price_per_kg': float(product.price_per_kg),
         'weight': deducted_quantity,
