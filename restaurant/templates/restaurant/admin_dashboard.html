@@ -37,6 +37,15 @@
             <!-- add table -->
             <article class="panel form-panel" id="table-form" {% if active_form_type != 'table' %}hidden{% endif %}>
                 <div class="content-grid">
+                    <div>
+                        <div class="panel-heading"><h3>Add table</h3></div>
+                        <form class="stack-form" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="table">
+                            {{ forms.table.as_p }}
+                            <button type="submit">Save Table</button>
+                        </form>
+                    </div>
                     <!-- tables -->
                     <div class="panel">
                         <div class="panel-heading"><h2>Tables</h2></div>
@@ -51,20 +60,21 @@
                             </tbody>
                         </table>
                     </div>
-                    <div>
-                        <div class="panel-heading"><h3>Add table</h3></div>
-                        <form class="stack-form" method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="form_type" value="table">
-                            {{ forms.table.as_p }}
-                            <button type="submit">Save Table</button>
-                        </form>
-                    </div>
+                    
                 </div>
             </article>
             <!-- add plat -->
             <article class="panel form-panel" id="menu-form" {% if active_form_type != 'menu' %}hidden{% endif %}>
                 <div class="content-grid">
+                    <div>
+                        <div class="panel-heading"><h3>Add dish</h3></div>
+                        <form class="stack-form" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="menu">
+                            {{ forms.menu.as_p }}
+                            <button type="submit">Save Dish</button>
+                        </form>
+                    </div>
                     <article class="panel">
                         <div class="panel-heading"><h2>Menu</h2></div>
                         <input
@@ -100,15 +110,7 @@
                             </tbody>
                         </table>
                     </article>
-                    <div>
-                        <div class="panel-heading"><h3>Add dish</h3></div>
-                        <form class="stack-form" method="post" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <input type="hidden" name="form_type" value="menu">
-                            {{ forms.menu.as_p }}
-                            <button type="submit">Save Dish</button>
-                        </form>
-                    </div>
+                    
 
                 </div>
             </article>
