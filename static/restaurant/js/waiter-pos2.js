@@ -22,6 +22,15 @@
         return $('<div>').text(text || '').html();
     }
 
+    function setReadyState(text) {
+        const $el = $('#scanner-ready-text');
+        if ($el.length) {
+            $el.text(text);
+        } else if (window && window.console) {
+            console.log('Scanner status:', text);
+        }
+    }
+
     function fieldForItem(itemId) {
         return document.getElementById(`id_item_${itemId}`);
     }
