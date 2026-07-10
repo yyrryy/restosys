@@ -613,7 +613,7 @@ def pos2_dashboard(request):
             return redirect('restaurant:pos2_dashboard')
 
     context = dashboard_context('pos', request.user)
-    menu_categories = list(MenuCategory.objects.filter(isactive=True).values_list('id', 'name'))
+    menu_categories = list(MenuCategory.objects.filter(isactive=True).order_by('-id').values_list('id', 'name'))
     # menu_items_payload = [
     #     {
     #         'id': item.pk,
