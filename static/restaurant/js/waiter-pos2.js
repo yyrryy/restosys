@@ -28,6 +28,7 @@
     }
 
     function parseScaleBarcode(rawValue) {
+        console.log('Raw barcode value:', rawValue);
         const digits = String(rawValue || '').replace(/\D/g, '');
         if (digits.length >= 12) {
             return {
@@ -314,6 +315,7 @@
             scanInProgress = true;
             try {
                 const parsed = parseScaleBarcode(scanBuffer);
+                console.log('Parsed barcode:', parsed);
                 scanBuffer = '';
                 if (!parsed.plu) {
                     return;
