@@ -112,7 +112,7 @@ def create_paid_pos_order(form, menu_items, print_ticket=True):
     if order.table:
         order.table.status = DiningTable.STATUS_AVAILABLE
         order.table.save(update_fields=['status'])
-    return order, stock_message
+    return order
 
 
 def send_cashier_pos_order_to_kitchen(form, menu_items):
