@@ -553,12 +553,12 @@ def pos_dashboard(request):
                 messages.error(request, action_error)
             else:
                 print_ticket = cashier_action != 'checkout_paid_no_ticket'
-                order, stock_message = create_paid_pos_order(form, menu_items, print_ticket=print_ticket)
+                order = create_paid_pos_order(form, menu_items, print_ticket=print_ticket)
                 if order:
                     messages.success(request, f'POS order #{order.pk} paid.')
-                    messages.success(request, stock_message)
+                    messages.success(request, 'Stock deducted from recipe components.')
                     return redirect('restaurant:pos_dashboard')
-                messages.error(request, stock_message)
+                messages.error(request, 'Failed to create paid order. Please check stock and try again.')
         else:
             order = create_order_from_form(form, menu_items, request.user)
             messages.success(request, f'Order #{order.pk} sent to kitchen.')
@@ -601,12 +601,12 @@ def pos2_dashboard(request):
                 messages.error(request, action_error)
             else:
                 print_ticket = cashier_action != 'checkout_paid_no_ticket'
-                order, stock_message = create_paid_pos_order(form, menu_items, print_ticket=print_ticket)
+                order = create_paid_pos_order(form, menu_items, print_ticket=print_ticket)
                 if order:
                     messages.success(request, f'POS order #{order.pk} paid.')
-                    messages.success(request, stock_message)
+                    messages.success(request, 'Stock deducted from recipe components.')
                     return redirect('restaurant:pos2_dashboard')
-                messages.error(request, stock_message)
+                messages.error(request, 'Failed to create paid order. Please check stock and try again.')
         else:
             order = create_order_from_form(form, menu_items, request.user)
             messages.success(request, f'Order #{order.pk} sent to kitchen.')
@@ -1519,7 +1519,7 @@ def update_order_status(request, order_id, status):
                 order.table.save(update_fields=['status'])
         messages.success(request, f'Order #{order.pk} marked {order.get_status_display()}.')
         if status == Order.STATUS_READY:
-            messages.success(request, stock_message)
+            messages.success(request, f'Order #{order.pk} is ready for pickup.')
     return redirect(request.POST.get('next') or 'restaurant:dashboard')
 
 def toggle_category_status(request):
