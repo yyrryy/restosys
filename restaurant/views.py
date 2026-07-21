@@ -728,7 +728,7 @@ def pos2_scan_barcode(request):
     barcode_price = float(parsed_barcode['price']) if parsed_barcode['price'] else None
     quantity_delta = 1.0
     scan_type = 'plu'
-
+    print(arsed_barcode)
     if barcode_price is not None and unit_price > 0:
         quantity_delta = round(barcode_price / unit_price, 3)
         if quantity_delta <= 0:
