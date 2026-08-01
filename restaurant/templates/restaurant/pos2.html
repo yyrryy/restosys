@@ -35,21 +35,23 @@
                         {{ form.cashier_waiter }}
                     {% endif %}
                 </div>
+                <div style="flex: 1; display: flex; gap: 1rem;">
 
-                <div class="category-strip" aria-label="Menu categories">
-                    <!-- <button class="category-chip" type="button" data-category="all">All</button> -->
-                    {% for id, name in menu_categories %}
-                        <button class="category-chip" type="button" data-category="{{ id }}">{{ name }}</button>
-                    {% endfor %}
-                </div>
-                <div class="" style="height: 65vh; overflow-y: scroll; overflow-x: hidden;">
-
-                    <div
-                        class="pos-grid"
-                        id="pos-grid"
-                        data-items-url="{% url 'restaurant:pos2_category_items' %}"
-                    >
-                        <!-- <p class="empty-state">Select a category to load products.</p> -->
+                    <div class="category-strip" aria-label="Menu categories">
+                        <!-- <button class="category-chip" type="button" data-category="all">All</button> -->
+                        {% for id, name in menu_categories %}
+                            <button class="category-chip" type="button" data-category="{{ id }}">{{ name }}</button>
+                        {% endfor %}
+                    </div>
+                    <div class="" style="height: 65vh; overflow-y: scroll; overflow-x: hidden; width:100%">
+    
+                        <div
+                            class="pos-grid"
+                            id="pos-grid"
+                            data-items-url="{% url 'restaurant:pos2_category_items' %}"
+                        >
+                            <!-- <p class="empty-state">Select a category to load products.</p> -->
+                        </div>
                     </div>
                 </div>
 
