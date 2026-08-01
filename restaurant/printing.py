@@ -283,7 +283,7 @@ def _payment_receipt_payload(order):
         '==========================================',
         'Merci pour votre visite !',
         '',
-        '',
+        'Commander sur notre site web: www.grilladelegout.ma',
         '',
     ])
 
