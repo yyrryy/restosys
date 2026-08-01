@@ -503,12 +503,10 @@ button {
 
 .category-strip {
     display: flex;
-    overflow-x: scroll;
-    flex-direction: row;
+    flex-direction: column;
     gap: 8px;
     align-items: stretch;
     margin-bottom: 12px;
-    overflow-x:scroll;
     width: 100%;
 }
 
