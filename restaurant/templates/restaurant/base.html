@@ -28,6 +28,7 @@
                 <a class="{% if active == 'suppliers' %}active{% endif %}" href="{% url 'restaurant:suppliers_dashboard' %}">Fournisseur</a>
                 <a class="{% if active == 'purchases' %}active{% endif %}" href="{% url 'restaurant:purchase_dashboard' %}">Achats</a>
             <a class="{% if active == 'inventory' %}active{% endif %}" href="{% url 'restaurant:inventory_dashboard' %}">Stock</a>
+                <a class="{% if active == 'reports' %}active{% endif %}" href="{% url 'restaurant:menu_item_reports' %}">Reports</a>
                 <a class="{% if active == 'pos' %}active{% endif %}" href="{% url 'restaurant:pos_dashboard' %}">POS</a>
             <a class="{% if active == 'waiter' %}active{% endif %}" href="{% url 'restaurant:waiter_dashboard' %}">Serveur</a>
             <a class="{% if active == 'kitchen' %}active{% endif %}" href="{% url 'restaurant:kitchen_dashboard' %}">Cuisine</a>

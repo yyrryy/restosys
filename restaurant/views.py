@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q, Sum
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -191,6 +191,63 @@ def owner_dashboard(request):
         'low_inventory': [item for item in InventoryItem.objects.all() if item.needs_reorder],
     })
     return render(request, 'restaurant/owner_dashboard.html', context)
+
+
+@login_required
+@role_required(UserProfile.ROLE_ADMIN)
+def menu_item_reports(request):
+    from_date = (request.GET.get('from') or '').strip()
+    to_date = (request.GET.get('to') or '').strip()
+    if from_date:
+        try:
+            datetime.strptime(from_date, '%Y-%m-%d')
+        except ValueError:
+            messages.error(request, 'Invalid "from" date format. Use YYYY-MM-DD.')
+            from_date = ''
+    if to_date:
+        try:
+            datetime.strptime(to_date, '%Y-%m-%d')
+        except ValueError:
+            messages.error(request, 'Invalid "to" date format. Use YYYY-MM-DD.')
+            to_date = ''
+
+    order_items = OrderItem.objects.select_related('menu_item', 'menu_item__category')
+    if from_date:
+        order_items = order_items.filter(order__date__date__gte=from_date)
+    if to_date:
+        order_items = order_items.filter(order__date__date__lte=to_date)
+
+    revenue_expression = ExpressionWrapper(F('quantity') * F('unit_price'), output_field=FloatField())
+    report_rows = (
+        order_items
+        .values('menu_item_id', 'menu_item__name', 'menu_item__category__name')
+        .annotate(
+            total_quantity=Sum('quantity'),
+            orders_count=Count('order_id', distinct=True),
+            total_revenue=Sum(revenue_expression),
+            last_ordered_at=Max('order__date'),
+        )
+        .order_by('-total_quantity', 'menu_item__name')
+    )
+
+    totals = order_items.aggregate(
+        total_quantity=Sum('quantity'),
+        total_revenue=Sum(revenue_expression),
+        unique_items=Count('menu_item_id', distinct=True),
+    )
+
+    context = dashboard_context('reports', request.user)
+    context.update({
+        'report_rows': report_rows,
+        'from_date': from_date,
+        'to_date': to_date,
+        'summary': {
+            'total_quantity': totals['total_quantity'] or 0,
+            'total_revenue': totals['total_revenue'] or 0,
+            'unique_items': totals['unique_items'] or 0,
+        },
+    })
+    return render(request, 'restaurant/menu_item_reports.html', context)
 
 
 @login_required

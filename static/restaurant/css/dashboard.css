@@ -736,6 +736,21 @@ th {
     font-weight: 700;
 }
 
+.report-filter-form {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(160px, 220px) minmax(160px, 220px) auto;
+    align-items: end;
+}
+
+.report-filter-form label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .purchase-builder {
     display: grid;
     gap: 10px;
@@ -1043,6 +1058,10 @@ input[type="checkbox"] {
     }
 
     .purchase-line-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .report-filter-form {
         grid-template-columns: 1fr;
     }
 }

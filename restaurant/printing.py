@@ -284,7 +284,8 @@ def _payment_receipt_payload(order):
         'Merci pour votre visite !',
         '',
         'Commander sur notre site web: www.grilladelegout.ma',
-        '',
+        'Instagram: @grilladelegout',
+        'Tel/Whatsapp: 07 06 04 53 85'
     ])
 
     payload = bytearray(b'\x1b@\n')

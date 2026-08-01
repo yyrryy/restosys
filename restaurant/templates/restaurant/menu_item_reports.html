@@ -1,0 +1,78 @@
+{% extends 'restaurant/base.html' %}
+
+{% block title %}Menu Item Reports | RestoSys{% endblock %}
+
+{% block content %}
+    <header class="topbar">
+        <div>
+            <p class="eyebrow">Reports</p>
+            <h1>Menu items ordered</h1>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <article class="metric-card">
+            <span>Total quantity ordered</span>
+            <strong>{{ summary.total_quantity|floatformat:2 }}</strong>
+        </article>
+        <article class="metric-card">
+            <span>Unique menu items ordered</span>
+            <strong>{{ summary.unique_items }}</strong>
+        </article>
+        <article class="metric-card">
+            <span>Total revenue</span>
+            <strong>{{ summary.total_revenue|floatformat:2 }}</strong>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Filter period</h2>
+        </div>
+        <form class="report-filter-form" method="get">
+            <label>
+                From
+                <input type="date" name="from" value="{{ from_date }}">
+            </label>
+            <label>
+                To
+                <input type="date" name="to" value="{{ to_date }}">
+            </label>
+            <button type="submit">Apply</button>
+        </form>
+    </section>
+
+    <section class="panel spacing-top">
+        <div class="panel-heading">
+            <h2>Ordered item breakdown</h2>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Menu item</th>
+                    <th>Category</th>
+                    <th>Total quantity</th>
+                    <th>Orders</th>
+                    <th>Revenue</th>
+                    <th>Last ordered</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_rows %}
+                    <tr>
+                        <td>{{ row.menu_item__name }}</td>
+                        <td>{{ row.menu_item__category__name|default:"-" }}</td>
+                        <td>{{ row.total_quantity|floatformat:2 }}</td>
+                        <td>{{ row.orders_count }}</td>
+                        <td>{{ row.total_revenue|floatformat:2 }}</td>
+                        <td>{{ row.last_ordered_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6">No ordered menu items found for this period.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}
