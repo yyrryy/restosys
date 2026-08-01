@@ -507,6 +507,9 @@ button {
     gap: 8px;
     align-items: stretch;
     margin-bottom: 12px;
+    height: 65vh; 
+    overflow-y: scroll; 
+    overflow-x: hidden;
 }
 
 .category-chip,
