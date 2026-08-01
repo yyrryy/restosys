@@ -126,17 +126,18 @@
                         ? `<span>${line.barcodeStats.totalWeight.toFixed(3)} kg • ${money(line.barcodeStats.totalPrice)}Dh (barcode)</span>`
                         : `<span>${line.quantity} x ${money(line.price)}</span>`}
                 </div>
-                <div class="qty-controls">
-                    ${line.barcodeStats
-                        ?
-                    `
-                    <span>${line.barcodeStats ? line.barcodeStats.totalWeight.toFixed(3) : line.quantity}</span>
-                    `
-                    :
-                    `<button type="button" data-qty-step="-1" data-item-id="${line.itemId}">-</button>
-                    <span>${line.barcodeStats ? line.barcodeStats.totalWeight.toFixed(3) : line.quantity}</span>
-                    <button type="button" data-qty-step="1" data-item-id="${line.itemId}">+</button>`}
-                </div>
+                        <div class="qty-controls">
+                            ${line.barcodeStats
+                                ?
+                            `
+                            <button type="button" class="remove-barcode-item" data-item-id="${line.itemId}" title="Remove scanned item">×</button>
+                            <span>${line.barcodeStats ? line.barcodeStats.totalWeight.toFixed(3) : line.quantity}</span>
+                            `
+                            :
+                            `<button type="button" data-qty-step="-1" data-item-id="${line.itemId}">-</button>
+                            <span>${line.barcodeStats ? line.barcodeStats.totalWeight.toFixed(3) : line.quantity}</span>
+                            <button type="button" data-qty-step="1" data-item-id="${line.itemId}">+</button>`}
+                        </div>
             </div>
         `).join('');
         $cartLines.html(linesHtml);
@@ -260,6 +261,20 @@
         delete barcodeStatsByItemId[itemId];
         markItemTouched(itemId);
         field.value = Math.max(0, Number(field.value || 0) + step);
+        updateCart();
+    });
+
+    $cartLines.on('click', '.remove-barcode-item', function () {
+        const itemId = Number(this.dataset.itemId || 0);
+        if (!itemId) {
+            return;
+        }
+        const field = fieldForItem(itemId);
+        if (field) {
+            field.value = 0;
+        }
+        delete barcodeStatsByItemId[itemId];
+        delete itemLastTouchedById[itemId];
         updateCart();
     });
 
