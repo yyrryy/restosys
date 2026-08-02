@@ -41,5 +41,13 @@ urlpatterns = [
     path('cashier/cash-desk/supplier-payment/', views.cash_desk_supplier_payment, name='cash_desk_supplier_payment'),
     path('cashier/scanner/', views.cashier_barcode_scanner, name='cashier_barcode_scanner'),
     path('orders/<int:order_id>/<str:status>/', views.update_order_status, name='update_order_status'),
-    path('toggle-category-status', views.toggle_category_status, name='toggle_category_status')
+    path('toggle-category-status', views.toggle_category_status, name='toggle_category_status'),
+    path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
+    # path('getcommandesfromserver', views.getcommandesfromserver, name='getcommandesfromserver')
 ]

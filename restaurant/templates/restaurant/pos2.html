@@ -15,7 +15,11 @@
             <a class="button-link" href="{% url 'restaurant:waiter_dashboard' %}">Serveur</a>
         {% endif %}
     </header> -->
-
+    <!-- <section class="panel order-panel pos-page-panel" style="position: sticky; top: 0; z-index: 1000; background-color: #fff; padding: 1rem; border-bottom: 1px solid #ccc;">
+        <h2>Commandes du serveur</h2>
+        <div id="server-orders" style="max-height: 200px; overflow-y: auto;">
+        </div>
+    </section> -->
     <section class="panel order-panel pos-page-panel">
         {% if is_cashier_mode %}
             <a class="button-link" href="{% url 'restaurant:cashier_dashboard' %}">Retour</a>
@@ -93,6 +97,17 @@
 
 {% block js %}
     <script>
+        function notifyfororders() {
+            fetch("{% url 'restaurant:getcommandesfromserver' %}")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        // display 
+                    }
+                })
+                .catch(error => console.error('Error fetching orders:', error));
+        }
+        //setInterval(notifyfororders, 5000); // Check for new orders every 10 seconds
         window.posScanUrl = "{% url 'restaurant:pos2_scan_barcode' %}";
     </script>
     <script src="{% static 'restaurant/js/waiter-pos2.js' %}"></script>

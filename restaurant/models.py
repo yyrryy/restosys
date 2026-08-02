@@ -289,6 +289,11 @@ class CashDeskEntry(models.Model):
 
     def __str__(self):
         return f'{self.get_entry_type_display()} {self.amount}'
+class Ordersnotif(models.Model):
+    length=models.IntegerField(default=0)
+    # catch the orders json from server
+    orders=models.JSONField(default=list, null=True, blank=True)
+    isread=models.BooleanField(default=False)
 
 class Scalbarcodescan(models.Model):
     barcode = models.CharField(max_length=32, unique=False)
@@ -304,3 +309,36 @@ class Scalbarcodescan(models.Model):
 
 class Config(models.Model):
     serverip=models.CharField(max_length=1000, default=None, null=True, blank=True)
+
+class Setting(models.Model):
+    name=models.CharField(max_length=500, default=None, null=True, blank=True)
+    ice=models.CharField(max_length=500, default=None, null=True, blank=True)
+    rc=models.CharField(max_length=500, default=None, null=True, blank=True)
+    idfiscal=models.CharField(max_length=500, default=None, null=True, blank=True)
+    cnss=models.CharField(max_length=500, default=None, null=True, blank=True)
+    address=models.CharField(max_length=500, default=None, null=True, blank=True)
+    phone=models.CharField(max_length=500, default=None, null=True, blank=True)
+    gmail=models.CharField(max_length=500, default=None, null=True, blank=True)
+    fix=models.CharField(max_length=500, default=None, null=True, blank=True)
+    # patente
+    pt=models.CharField(max_length=500, default=None, null=True, blank=True)
+    serverip=models.CharField(max_length=500, default=None, null=True, blank=True)
+    logo=models.ImageField(upload_to='logos/', null=True, blank=True)
+    logoheadfacture=models.ImageField(upload_to='logos/', null=True, blank=True)
+    logobodyfacture=models.ImageField(upload_to='logos/', null=True, blank=True)
+
+class Orderfromserver(models.Model):
+    date=models.DateTimeField(default=timezone.now)
+    total=models.FloatField(default=0)
+    note=models.TextField(blank=True, null=True)
+    clientname=models.TextField(blank=True, null=True)
+    clientaddress=models.TextField(blank=True, null=True)
+    clientphone=models.TextField(blank=True, null=True)
+    order_no=models.CharField(max_length=100, default=None, null=True, blank=True)
+
+class Orderitemfromserver(models.Model):
+    order=models.ForeignKey(Orderfromserver, related_name='items', on_delete=models.CASCADE)
+    name=models.CharField(max_length=1000, default=None, null=True, blank=True)
+    qty=models.FloatField(default=0)
+    price=models.FloatField(default=0)
+    total=models.FloatField(default=0)
