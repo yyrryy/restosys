@@ -27,4 +27,4 @@ def createorders(orders):
         ]
 
         # 5. Bulk insert
-        Orderitem.objects.bulk_create(order_items)
+        Orderitemfromserver.objects.bulk_create(order_items)
