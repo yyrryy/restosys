@@ -4,8 +4,7 @@ from pathlib import Path
 
 from django.conf import settings
 
-from .models import Order
-
+from .models import Order, Orderfromserver, Orderitemfromserver
 logger = logging.getLogger(__name__)
 ARABIC_RE = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]')
 
@@ -370,3 +369,36 @@ def dispatch_payment_receipt(order_id):
     except Exception as exc:
         logger.exception('Payment receipt printing failed for order #%s.', order_id)
         return False, str(exc)
+
+def dispatch_server_order_print(order_id):
+    try:
+        printserverorder(order_id)
+        return True, None
+    except Exception as exc:
+        logger.exception('Server order printing failed for order #%s.', order_id)
+        return False, str(exc)
+
+
+def printserverorder(order_id):
+    order = Orderfromserver.objects.get(pk=order_id)
+    items = Orderitemfromserver.objects.filter(order=order)
+    lines = [
+        '==========================================',
+        f'Commande site #{order.id}',
+        f'Client: {order.clientname}',
+        f'Téléphone: {order.clientphone}',
+        f'Time: {order.date.strftime("%Y-%m-%d %H:%M:%S")}',
+        '------------------------------------------',
+    ]
+    for item in items:
+        lines.append(f'{item.qty} x {item.name}')
+    lines.extend([
+        '------------------------------------------',
+        f'Total: {order.total:.2f} DH',
+    ])
+    payload = '\n'.join(lines)
+    _print_payload(f'Commande site #{order.id}', payload)
+    order.printed = True
+    order.save()
+    
+        # '==========================================',

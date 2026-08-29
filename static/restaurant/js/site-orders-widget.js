@@ -11,7 +11,14 @@
 
     const feedUrl = widget.dataset.feedUrl;
     let expanded = false;
-
+    function printserverorder(orderid, event) {
+        $.get("/restaurant/printserverorder/", { orderid: orderid }, function (data) {
+            if (data.success) {
+                // remove the printed order from the list
+                $(event.target).closest('.site-order-card').remove();
+            }
+        });
+    }
     function togglePanel() {
         expanded = !expanded;
         panel.hidden = !expanded;
@@ -43,6 +50,7 @@
                     <div class="site-order-card-head">
                         <span>${label}</span>
                         <span class="site-order-card-total">${formatTotal(order.total)} DH</span>
+                        <button onclick='printserverorder(${order.id}, event)'>Imprimer</button>
                     </div>
                     ${order.clientname ? `<p class="site-order-card-meta">${order.clientname}${order.clientphone ? ' - ' + order.clientphone : ''}</p>` : ''}
                     ${items ? `<ul class="site-order-card-items">${items}</ul>` : ''}

@@ -10,3 +10,4 @@ img/*
 media/*
 push.py
 venv/
+*.log

@@ -27,7 +27,7 @@ from .forms import (
     SupplierForm,
 )
 from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Orderfromserver, Purchase, PurchaseItem, RecipeComponent, Scalbarcodescan, Stockout, Supplier, UserProfile, Config, Setting, Ordersnotif
-from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt
+from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt, dispatch_server_order_print
 from .utils import createorders
 from threading import Thread
 def user_role(user):
@@ -1597,7 +1597,7 @@ def site_orders_feed(request):
     orders = (
         Orderfromserver.objects.filter(printed=False)
         .prefetch_related('items')
-        .order_by('-date')[:50]
+        .order_by('id')
     )
     data = []
     for order in orders:
@@ -1623,8 +1623,22 @@ def site_orders_feed(request):
     return JsonResponse({'count': len(data), 'orders': data})
 
 
+@login_required
+def printserverorder(request):
+    order_id = request.GET.get('orderid')
+    if not order_id:
+        return JsonResponse({'success': False, 'message': 'orderid manquant.'}, status=400)
+
+    success, error_message = dispatch_server_order_print(order_id)
+    if not success:
+        return JsonResponse(
+            {'success': False, 'message': error_message or f'Échec de l’impression pour la commande #{order_id}.'},
+            status=500,
+        )
+    return JsonResponse({'success': True})
+
+
 def getcommandesfromserver(request):
-    # This function is a placeholder for fetching orders from the server.
     # Implement the logic to retrieve orders as needed.
     setting = Setting.objects.first()
     print('server ip:', setting)
