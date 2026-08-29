@@ -331,11 +331,12 @@ class Orderfromserver(models.Model):
     date=models.DateTimeField(default=timezone.now)
     total=models.FloatField(default=0)
     note=models.TextField(blank=True, null=True)
+    deliveryfees=models.FloatField(default=0)
     clientname=models.TextField(blank=True, null=True)
     clientaddress=models.TextField(blank=True, null=True)
     clientphone=models.TextField(blank=True, null=True)
     order_no=models.CharField(max_length=100, default=None, null=True, blank=True)
-
+    printed=models.BooleanField(default=False)
 class Orderitemfromserver(models.Model):
     order=models.ForeignKey(Orderfromserver, related_name='items', on_delete=models.CASCADE)
     name=models.CharField(max_length=1000, default=None, null=True, blank=True)

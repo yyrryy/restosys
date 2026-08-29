@@ -42,6 +42,12 @@
     </aside>
 
     <main class="workspace">
+        
+            <div id="server-order-notification" class="server-order-notification" role="status" aria-live="assertive" hidden>
+                <strong>New online order</strong>
+                <span id="server-order-notification-count"></span>
+                <button type="button" id="enable-order-sound" class="ghost-button">Enable notifications</button>
+            </div>
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -51,9 +57,31 @@
         {% endif %}
         {% block content %}{% endblock %}
     </main>
+    {% if user.is_authenticated %}
+        <div id="site-orders-widget" class="site-orders-widget" data-feed-url="{% url 'restaurant:site_orders_feed' %}">
+            <button type="button" id="site-orders-toggle" class="site-orders-toggle">
+                <span>Commande site</span>
+                <span id="site-orders-badge" class="site-orders-badge" hidden>0</span>
+                <span class="site-orders-caret">▲</span>
+            </button>
+            <div id="site-orders-panel" class="site-orders-panel" hidden>
+                <div class="site-orders-panel-head">
+                    <strong>Commandes du site</strong>
+                </div>
+                <div id="site-orders-list" class="site-orders-list">
+                    <p class="site-orders-empty">Aucune commande pour le moment.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <script src="{% static 'restaurant/js/jquery.js' %}"></script>
     <script src="{% static 'restaurant/js/select2.min.js' %}"></script>
     <script src="{% static 'restaurant/js/functions.js' %}"></script>
+    <script>
+        window.serverOrderNotificationUrl = "{% url 'restaurant:getcommandesfromserver' %}";
+    </script>
+    <script src="{% static 'restaurant/js/server-order-notifications.js' %}"></script>
+    <script src="{% static 'restaurant/js/site-orders-widget.js' %}"></script>
     {% block js %}{% endblock %}
 </body>
 </html>

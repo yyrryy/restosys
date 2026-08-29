@@ -26,11 +26,10 @@ from .forms import (
     RecipeComponentFormSet,
     SupplierForm,
 )
-from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Scalbarcodescan, Stockout, Supplier, UserProfile, Config, Setting, Ordersnotif
+from .models import CashDeskEntry, DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Orderfromserver, Purchase, PurchaseItem, RecipeComponent, Scalbarcodescan, Stockout, Supplier, UserProfile, Config, Setting, Ordersnotif
 from .printing import dispatch_kitchen_ticket, dispatch_payment_receipt
 from .utils import createorders
 from threading import Thread
-
 def user_role(user):
     if user.is_superuser:
         return UserProfile.ROLE_OWNER
@@ -901,11 +900,13 @@ def cashier_dashboard(request):
     if current_role == UserProfile.ROLE_ADMIN or current_role == UserProfile.ROLE_OWNER:
         stats.append({'label': 'Argent collecté Aujourd-hui', 'value': cash_collected, 'url': 'restaurant:cash_desk_dashboard'})
     context = dashboard_context('cashier', request.user)
+    print('Cashier dashboard stats:hgggggggggggggggg')
     context.update({
         'stats': stats,
         'ready_orders': ready_orders,
         'payable_orders': payable_orders,
         'paid_orders': paid_orders,
+        'show_server_order_notifications': True,
     })
     return render(request, 'restaurant/cashier_dashboard.html', context)
 
@@ -1591,21 +1592,52 @@ def toggle_category_status(request):
     category.save(update_fields=['isactive'])
     return JsonResponse({'success': True, 'isactive': category.isactive})
 
+@login_required
+def site_orders_feed(request):
+    orders = (
+        Orderfromserver.objects.filter(printed=False)
+        .prefetch_related('items')
+        .order_by('-date')[:50]
+    )
+    data = []
+    for order in orders:
+        data.append({
+            'id': order.pk,
+            'order_no': order.order_no,
+            'clientname': order.clientname,
+            'clientphone': order.clientphone,
+            'clientaddress': order.clientaddress,
+            'note': order.note,
+            'date': order.date.isoformat() if order.date else None,
+            'total': order.total,
+            'items': [
+                {
+                    'name': item.name,
+                    'qty': item.qty,
+                    'price': item.price,
+                    'total': item.total,
+                }
+                for item in order.items.all()
+            ],
+        })
+    return JsonResponse({'count': len(data), 'orders': data})
+
+
 def getcommandesfromserver(request):
     # This function is a placeholder for fetching orders from the server.
     # Implement the logic to retrieve orders as needed.
-    notification=Ordersnotif.objects.filter(isread=False).first()
-    setting = Setting.objects.filter(name='serverip').first()
+    setting = Setting.objects.first()
+    print('server ip:', setting)
     if setting and setting.serverip:
         try:
             # get the number of commands in server not yet sent to local server
             res=req.get(f'http://{setting.serverip}/getcommandnumber')
             length=json.loads(res.text)['length']
+            print('orders from server:', length)
             if length!=0:
                 # creeate orders here
                 orders = json.loads(res.text)['orders']
                 Thread(target=createorders, args=(orders,)).start()
-                Ordersnotif.objects.create(length=json.loads(res.text)['length'], orders=json.loads(res.text)['orders'])
             #     return JsonResponse({
             #         'length':json.loads(res.text)['length'],
             #         #'orders':json.loads(res.text)['orders']
@@ -1616,15 +1648,12 @@ def getcommandesfromserver(request):
             #     })
             res.raise_for_status()
         except req.exceptions.RequestException as e:
+            print('Error notifying admin on server:', e)
             with open('error.log', 'a') as f:
                 f.write(f'Error notifying admin on server: {e}\n')
             # return JsonResponse({
             #     'length':0,
             # })
-    if notification:
-        return JsonResponse({
-            'length':notification.length
-        })
     return JsonResponse({
-        'length':0,
+        'length':Orderfromserver.objects.filter(printed=False).count(),
     })

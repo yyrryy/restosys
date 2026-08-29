@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Stockout, Supplier, UserProfile, Config
-
+from .models import DiningTable, InventoryHistory, InventoryItem, MenuCategory, MenuItem, Order, OrderItem, Purchase, PurchaseItem, RecipeComponent, Stockout, Supplier, UserProfile, Config, Setting, Ordersnotif, Orderfromserver, Orderitemfromserver
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -50,6 +49,7 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
 
 
+
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'plu', 'price', 'quantity', 'unit', 'reorder_level', 'needs_reorder')
@@ -89,7 +89,22 @@ class PurchaseItemAdmin(admin.ModelAdmin):
     list_filter = ('inventory_item',)
     search_fields = ('purchase__supplier__name', 'inventory_item__name')
 
-@admin.register(Config)
-class ConfigAdmin(admin.ModelAdmin):
+@admin.register(Setting)
+class SettingAdmin(admin.ModelAdmin):
     list_display = ('serverip',)
     search_fields = ('serverip',)
+
+@admin.register(Ordersnotif)
+class OrdersnotifAdmin(admin.ModelAdmin):
+    list_display = ('length', 'isread')
+
+@admin.register(Orderfromserver)
+class OrderfromserverAdmin(admin.ModelAdmin):
+    list_display = ('id', 'date')
+    list_filter = ('date',)
+    search_fields = ('id',)
+
+@admin.register(Orderitemfromserver)
+class OrderitemfromserverAdmin(admin.ModelAdmin):
+    list_display = ('qty',)
+    search_fields = ('orderfromserver__id', 'menuitem__name')
