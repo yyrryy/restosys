@@ -54,6 +54,10 @@
         {% block content %}{% endblock %}
     </main>
     {% if user.is_authenticated %}
+        <div id="server-order-notification" class="server-order-notification" hidden>
+            <span id="server-order-notification-count"></span>
+            <button type="button" id="enable-order-sound" class="nav-button">Enable notifications</button>
+        </div>
         <div id="site-orders-widget" class="site-orders-widget" data-feed-url="{% url 'restaurant:site_orders_feed' %}">
             <button type="button" id="site-orders-toggle" class="site-orders-toggle">
                 <span>Commande du site</span>
