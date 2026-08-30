@@ -1594,6 +1594,36 @@ def toggle_category_status(request):
 
 @login_required
 def site_orders_feed(request):
+    neworders=False
+    setting = Setting.objects.first()
+    print('server ip:', setting)
+    if setting and setting.serverip:
+        try:
+            # get the number of commands in server not yet sent to local server
+            res=req.get(f'http://{setting.serverip}/getcommandnumber')
+            length=json.loads(res.text)['length']
+            print('orders from server:', length)
+            if length!=0:
+                neworders=True
+                # creeate orders here
+                orders = json.loads(res.text)['orders']
+                Thread(target=createorders, args=(orders,)).start()
+            #     return JsonResponse({
+            #         'length':json.loads(res.text)['length'],
+            #         #'orders':json.loads(res.text)['orders']
+            #     })
+            # else:
+            #     return JsonResponse({
+            #         'length':0,
+            #     })
+            res.raise_for_status()
+        except req.exceptions.RequestException as e:
+            print('Error notifying admin on server:', e)
+            with open('error.log', 'a') as f:
+                f.write(f'Error notifying admin on server: {e}\n')
+            # return JsonResponse({
+            #     'length':0,
+            # })
     orders = (
         Orderfromserver.objects.filter(printed=False)
         .prefetch_related('items')
@@ -1620,7 +1650,7 @@ def site_orders_feed(request):
                 for item in order.items.all()
             ],
         })
-    return JsonResponse({'count': len(data), 'orders': data})
+    return JsonResponse({'count': len(data), 'orders': data, 'neworders': neworders})
 
 
 @login_required

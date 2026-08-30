@@ -11,6 +11,7 @@
 
     const feedUrl = widget.dataset.feedUrl;
     let expanded = false;
+    let newOrderAudio = null;
     function printserverorder(orderid, event) {
         $.get("/restaurant/printserverorder/", { orderid: orderid }, function (data) {
             if (data.success) {
@@ -20,6 +21,11 @@
         });
     }
     function togglePanel() {
+        if (newOrderAudio) {
+            newOrderAudio.pause();
+            newOrderAudio.currentTime = 0;
+            newOrderAudio = null;
+        }
         expanded = !expanded;
         panel.hidden = !expanded;
         widget.classList.toggle('expanded', expanded);
@@ -82,6 +88,17 @@
             }
             const data = await response.json();
             updateBadge(Number(data.count || 0));
+            if (data.neworders) {
+                // Loop the alert until the user clicks the widget.
+                if (!newOrderAudio) {
+                    newOrderAudio = new Audio('/static/restaurant/sounds/notificationsound.mp3');
+                    newOrderAudio.loop = true;
+                    newOrderAudio.play().catch(function () {});
+                }
+                if (!expanded) {
+                    togglePanel();
+                }
+            }
             if (expanded) {
                 renderOrders(data.orders || []);
             }
