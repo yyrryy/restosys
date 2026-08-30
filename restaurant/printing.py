@@ -372,22 +372,29 @@ def dispatch_payment_receipt(order_id):
 
 def dispatch_server_order_print(order_id):
     try:
-        printserverorder(order_id)
+        printingserverorder(order_id)
         return True, None
     except Exception as exc:
         logger.exception('Server order printing failed for order #%s.', order_id)
         return False, str(exc)
 
 
-def printserverorder(order_id):
+def printingserverorder(order_id):
+    if not _thermal_printing_enabled():
+        raise ValueError('Thermal printing is disabled in settings.')
+    if win32print is None:
+        logger.error('Thermal printing skipped: win32print is not installed.')
+        raise ValueError('Thermal printing is disabled in settings.')
     order = Orderfromserver.objects.get(pk=order_id)
     items = Orderitemfromserver.objects.filter(order=order)
     lines = [
+        'GRILLADE LE GOUT: Commande site',
+        '',
         '==========================================',
-        f'Commande site #{order.id}',
+        f'N #{order.id}',
         f'Client: {order.clientname}',
         f'Téléphone: {order.clientphone}',
-        f'Time: {order.date.strftime("%Y-%m-%d %H:%M:%S")}',
+        f'Date: {order.date.strftime("%Y-%m-%d %H:%M:%S")}',
         '------------------------------------------',
     ]
     for item in items:
@@ -396,7 +403,10 @@ def printserverorder(order_id):
         '------------------------------------------',
         f'Total: {order.total:.2f} DH',
     ])
-    payload = '\n'.join(lines)
+    payload = bytearray(b'\x1b@\n')
+    payload.extend(b'\x1ba\x00')
+    payload.extend('\r\n'.join(lines).encode('cp437', errors='replace'))
+    payload.extend(b'\n\n\n\x1dV\x00')
     _print_payload(f'Commande site #{order.id}', payload)
     order.printed = True
     order.save()

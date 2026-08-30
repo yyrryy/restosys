@@ -12,14 +12,7 @@
     const feedUrl = widget.dataset.feedUrl;
     let expanded = false;
     let newOrderAudio = null;
-    function printserverorder(orderid, event) {
-        $.get("/restaurant/printserverorder/", { orderid: orderid }, function (data) {
-            if (data.success) {
-                // remove the printed order from the list
-                $(event.target).closest('.site-order-card').remove();
-            }
-        });
-    }
+    
     function togglePanel() {
         if (newOrderAudio) {
             newOrderAudio.pause();
@@ -91,13 +84,11 @@
             if (data.neworders) {
                 // Loop the alert until the user clicks the widget.
                 if (!newOrderAudio) {
-                    newOrderAudio = new Audio('/static/restaurant/sounds/notificationsound.mp3');
+                    newOrderAudio = new Audio('/static/sounds/notificationsound.mp3');
                     newOrderAudio.loop = true;
                     newOrderAudio.play().catch(function () {});
                 }
-                if (!expanded) {
-                    togglePanel();
-                }
+                
             }
             if (expanded) {
                 renderOrders(data.orders || []);
