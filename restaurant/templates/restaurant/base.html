@@ -75,6 +75,14 @@
     <script src="{% static 'restaurant/js/select2.min.js' %}"></script>
     <script src="{% static 'restaurant/js/functions.js' %}"></script>
     <script>
+        function printserverorder(orderid, event) {
+            $.get("/restaurant/printserverorder/", { orderid: orderid }, function (data) {
+                if (data.success) {
+                    // remove the printed order from the list
+                    $(event.target).closest('.site-order-card').remove();
+                }
+            });
+        }
         window.serverOrderNotificationUrl = "{% url 'restaurant:getcommandesfromserver' %}";
     </script>
     <!-- <script src="{% static 'restaurant/js/server-order-notifications.js' %}"></script> -->
