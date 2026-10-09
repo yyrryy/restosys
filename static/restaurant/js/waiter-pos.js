@@ -112,7 +112,7 @@
         });
 
         if (!lines.length) {
-            cartLines.innerHTML = '<p class="empty-state">Tap dishes to build the order.</p>';
+            cartLines.innerHTML = '<p class="empty-state">Cliquer sur les plats.</p>';
             cartTotal.textContent = '0.00';
             return;
         }

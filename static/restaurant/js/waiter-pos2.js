@@ -111,7 +111,7 @@
         refreshTileSelection();
 
         if (!lines.length) {
-            $cartLines.html('<p class="empty-state">Tap dishes to build the order.</p>');
+            $cartLines.html('<p class="empty-state">Cliquer sur les plats.</p>');
             $cartTotal.text('0.00');
             return;
         }
